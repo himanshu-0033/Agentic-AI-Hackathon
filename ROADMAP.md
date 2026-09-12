@@ -98,17 +98,19 @@ This is the phase that decides whether you win. Budget generously.
 
 | # | Task | Owner | Done |
 |---|------|-------|:----:|
-| 4.1 | Single-page UI: left is the live reasoning trace, centre is the hypothesis bars plus evidence graph, right is the action queue | | ☐ |
-| 4.2 | **Judge controls**: three injection buttons plus an "Override — block anyway" button. These must be clickable during the live demo | | ☐ |
-| 4.3 | Server-sent events so the ledger animates as the agent reasons. A static page that refreshes at the end wastes the whole autonomy story | | ☐ |
-| 4.4 | `eval/run.py` — batch all 40, emit the scoreboard table | | ☐ |
-| 4.5 | `eval/baseline.py` — trust the alert label, always block. Report its accuracy for the comparison row | | ☐ |
-| 4.6 | `tests/test_loop.py` — one assert-based self-check: a known-failed incident must not produce a block | | ☐ |
+| 4.1 | Single-page UI: left is the live reasoning trace, centre is the hypothesis bars plus evidence graph, right is the action queue | | ☑ |
+| 4.2 | **Judge controls**: three injection buttons plus an "Override — block anyway" button. These must be clickable during the live demo | | ☑ |
+| 4.3 | Server-sent events so the ledger animates as the agent reasons. A static page that refreshes at the end wastes the whole autonomy story | | ☑ |
+| 4.4 | `eval/run.py` — batch all 40, emit the scoreboard table | | ☑ |
+| 4.5 | `eval/baseline.py` — trust the alert label, always block. Report its accuracy for the comparison row | | ☑ |
+| 4.6 | `tests/test_loop.py` — one assert-based self-check: a known-failed incident must not produce a block | | ☑ |
 | 4.7 | Record the demo video against the 7 beats in the README. Judge presses the buttons on camera | | ☐ |
 | 4.8 | Presentation deck: approach, solution, challenges, conclusion. **Include the scoreboard slide with the baseline row** | | ☐ |
 | 4.9 | Rename all files to `TeamName_*_agentic` and submit | | ☐ |
 
 **Acceptance:** a judge who has never seen the code can break the agent with a button and watch it recover, without anyone touching a terminal.
+
+> **DONE (4.1-4.6).** `verdict/ui/app.py` (FastAPI, stdlib SSE via a buffered-event replay — no websockets/threading) + `verdict/ui/index.html` (single page, vanilla JS, no build step). Verified end-to-end over real HTTP: incident picker, Start Investigation (animated ledger bars via SSE), Close Case, and all 3 judge injection buttons + the Override button, including the escalate→override→auto-rollback sequence. `python -m verdict.ui.app` → http://127.0.0.1:8000. 4.7-4.9 (video, deck, submission renaming) are on the team, not scriptable.
 
 ---
 

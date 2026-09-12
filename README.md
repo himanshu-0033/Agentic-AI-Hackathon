@@ -183,6 +183,30 @@ The brief states explicitly that agent count earns zero points. A six-agent mesh
 
 ---
 
+## Running the demo
+
+```bash
+pip install -r requirements.txt
+python -m verdict.ui.app
+# open http://127.0.0.1:8000
+```
+
+Pick an incident, choose the planner (rule = offline/deterministic, llm = Groq
+`openai/gpt-oss-120b`, needs `GROQ_API_KEY` in `.env`), hit **Start
+Investigation** to watch the hypothesis ledger animate, **Close Case** to run
+decide/execute/verify, then use the three judge buttons — Evidence Reversal,
+Silent Firewall Failure, Broad-Blast Scenario (escalates → click **Override**
+to watch the auto-rollback) — to break the agent live and watch it recover.
+
+No UI needed to reproduce the scoreboard:
+
+```bash
+python -m verdict.eval.run              # all 40 incidents, rule mode
+python tests/test_respond.py            # Phase 3 acceptance: all 3 injections
+```
+
+---
+
 ## Guardrails
 
 - All activity is confined to the provided sandbox. No production systems, no real credentials, no real network changes.

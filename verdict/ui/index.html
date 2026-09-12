@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VERDICT — SOC Investigation Agent</title>
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121822; --panel2: #171f2c; --border: #223047;
+    --text: #d8e1ef; --dim: #7c8aa0; --accent: #4da3ff;
+    --h1: #ff5c66; --h2: #ffb84d; --h3: #8a94a6; --h4: #3ddc84;
+    --ok: #3ddc84; --warn: #ffb84d; --bad: #ff5c66;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.5 ui-monospace, "SF Mono", Consolas, monospace; }
+  header { padding: 14px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; letter-spacing: 0.5px; }
+  header h1 span { color: var(--accent); }
+  select, button { background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+                    border-radius: 6px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  select { min-width: 320px; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #06121f; font-weight: 600; border: none; }
+  .status-chip { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+                 text-transform: uppercase; letter-spacing: 0.5px; }
+  main { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1px; background: var(--border); }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); padding: 16px; min-height: 420px; }
+  section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim);
+               margin: 0 0 12px; }
+  .trace-item { border-left: 2px solid var(--accent); padding: 6px 0 6px 10px; margin-bottom: 10px; }
+  .trace-item .tool { color: var(--accent); font-weight: 600; }
+  .trace-item .why { color: var(--dim); font-size: 12.5px; }
+  .trace-item .obs { margin-top: 3px; }
+  .bar-row { margin-bottom: 12px; }
+  .bar-row .label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .bar-track { height: 10px; background: var(--panel2); border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; transition: width 0.5s ease; width: 0%; }
+  .h1 { background: var(--h1); } .h2 { background: var(--h2); }
+  .h3 { background: var(--h3); } .h4 { background: var(--h4); }
+  .verdict-box { margin-top: 16px; padding: 12px; background: var(--panel2); border-radius: 8px;
+                 border: 1px solid var(--border); }
+  .verdict-box .v { font-size: 18px; font-weight: 700; }
+  .evidence-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .chip { background: var(--panel2); border: 1px solid var(--border); border-radius: 4px;
+          padding: 3px 8px; font-size: 11px; color: var(--dim); }
+  .action-item { padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 12.5px; }
+  .action-item .step { color: var(--accent); }
+  .banner { padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; font-size: 12.5px; }
+  .banner.injection { background: #2a1e0a; border: 1px solid var(--warn); color: var(--warn); }
+  .banner.escalate { background: #2a1414; border: 1px solid var(--bad); color: var(--bad); }
+  .banner.rollback { background: #16241a; border: 1px solid var(--ok); color: var(--ok); }
+  .controls { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px;
+              flex-wrap: wrap; align-items: center; }
+  .controls .group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .report-line { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12.5px; }
+  .empty { color: var(--dim); font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>VERDICT <span>// SOC Investigation Agent</span></h1>
+  <select id="incidentSelect"><option>loading incidents…</option></select>
+  <select id="modeSelect">
+    <option value="rule">Planner: rule (offline)</option>
+    <option value="llm">Planner: LLM (Groq)</option>
+  </select>
+  <button class="primary" id="startBtn">▶ Start Investigation</button>
+  <span class="status-chip" id="statusChip" style="background:#223047;color:#d8e1ef;">idle</span>
+</header>
+
+<main>
+  <section>
+    <h2>Reasoning Trace</h2>
+    <div id="trace"><p class="empty">Pick an incident and start the investigation.</p></div>
+  </section>
+
+  <section>
+    <h2>Hypothesis Ledger</h2>
+    <div id="ledger">
+      <div class="bar-row"><div class="label"><span>H1 &middot; Succeeded</span><span id="pH1">0%</span></div>
+        <div class="bar-track"><div class="bar-fill h1" id="bH1"></div></div></div>
+      <div class="bar-row"><div class="label"><span>H2 &middot; Attempted, failed</span><span id="pH2">0%</span></div>
+        <div class="bar-track"><div class="bar-fill h2" id="bH2"></div></div></div>
+      <div class="bar-row"><div class="label"><span>H3 &middot; Scanner noise</span><span id="pH3">0%</span></div>
+        <div class="bar-track"><div class="bar-fill h3" id="bH3"></div></div></div>
+      <div class="bar-row"><div class="label"><span>H4 &middot; Benign</span><span id="pH4">0%</span></div>
+        <div class="bar-track"><div class="bar-fill h4" id="bH4"></div></div></div>
+    </div>
+    <div class="verdict-box" id="verdictBox"><span class="empty">no verdict yet</span></div>
+    <h2 style="margin-top:20px;">Evidence Collected</h2>
+    <div class="evidence-chips" id="evidenceChips"></div>
+  </section>
+
+  <section>
+    <h2>Decision &amp; Response</h2>
+    <div id="decision"><p class="empty">Awaiting investigation.</p></div>
+    <h2 style="margin-top:16px;">Action Log</h2>
+    <div id="actions"><p class="empty">—</p></div>
+    <h2 style="margin-top:16px;">Evidence Auditor</h2>
+    <div id="report"><p class="empty">—</p></div>
+  </section>
+</main>
+
+<div class="controls">
+  <div class="group">
+    <button id="closeBtn" disabled>&check; Close Case</button>
+    <button id="overrideBtn" disabled>&#9888; Override — Block Anyway</button>
+  </div>
+  <div class="group" style="margin-left:auto;">
+    <span class="empty" style="align-self:center;">Judge controls:</span>
+    <button id="injReversal" disabled>Evidence Reversal</button>
+    <button id="injFirewall" disabled>Silent Firewall Failure</button>
+    <button id="injOverride" disabled>Broad-Blast Scenario</button>
+  </div>
+</div>
+
+<script>
+let currentIid = null, renderedCount = 0, es = null;
+
+const el = id => document.getElementById(id);
+
+function setStatus(s) {
+  const chip = el('statusChip');
+  chip.textContent = s;
+  const colors = { idle:'#223047', investigated:'#2a3a1e', closed:'#16241a', contained:'#16241a',
+                    escalated:'#2a1414', rolled_back_to_narrow:'#16241a', failed:'#2a1414' };
+  chip.style.background = colors[s] || '#223047';
+}
+
+function pct(x) { return Math.round(x * 100) + '%'; }
+
+function updateLedger(conf) {
+  const hs = ['H1', 'H2', 'H3', 'H4'];
+  for (let i = 0; i < hs.length; i++) {
+    const h = hs[i];
+    el('p' + h).textContent = pct(conf[h] || 0);
+    el('b' + h).style.width = pct(conf[h] || 0);
+  }
+}
+
+function appendTrace(step) {
+  const div = document.createElement('div');
+  div.className = 'trace-item';
+  div.innerHTML = '<div class="tool">&rarr; ' + step.tool + '</div>'
+    + '<div class="why">' + step.rationale + '</div>'
+    + '<div class="obs">' + step.evidence_reason + '</div>';
+  const t = el('trace');
+  if (t.querySelector('.empty')) t.innerHTML = '';
+  t.appendChild(div);
+  t.scrollTop = t.scrollHeight;
+
+  const chip = document.createElement('span');
+  chip.className = 'chip';
+  chip.textContent = step.artifact_id;
+  el('evidenceChips').appendChild(chip);
+}
+
+function renderVerdict(v) {
+  updateLedger(v.confidence || {});
+  const box = el('verdictBox');
+  if (v.reopened === false) {
+    box.innerHTML = '<span class="empty">' + v.note + '</span>';
+    return;
+  }
+  let extra = '';
+  if (v.reopened) {
+    extra = '<div class="banner injection" style="margin-top:8px;">'
+      + 'REOPENED: prior verdict ' + v.prior_verdict + ' &rarr; new evidence changes this to ' + v.verdict
+      + '</div>';
+  }
+  box.innerHTML = '<div class="v">' + v.verdict + '</div>'
+    + '<div class="empty">confidence ' + pct(v.confidence[v.top_hypothesis]) + ' &middot; '
+    + v.tool_calls + ' tool calls &middot; stopped: ' + v.stop_reason + '</div>' + extra;
+}
+
+function renderInjection(p) {
+  const banner = document.createElement('div');
+  banner.className = 'banner injection';
+  banner.textContent = 'INJECTED — ' + p.name + ': ' + p.message;
+  el('trace').appendChild(banner);
+}
+
+function renderDecision(d) {
+  let banner = '';
+  if (d.escalate) {
+    banner = '<div class="banner escalate">ESCALATED — blast radius too high: ' + d.reason + '</div>';
+    el('overrideBtn').disabled = false;
+  } else {
+    el('overrideBtn').disabled = true;
+  }
+  let ruleLine = '';
+  if (d.rule) {
+    ruleLine = '<div class="empty">rule: ' + d.rule.scope + ' block ' + d.rule.src
+      + ' &rarr; ' + d.rule.dst + ':' + d.rule.port + '</div>';
+  }
+  el('decision').innerHTML = banner
+    + '<div><b>Tier:</b> ' + d.tier + '</div>'
+    + '<div class="empty">' + d.reason + '</div>' + ruleLine;
+}
+
+function appendAction(a) {
+  const box = el('actions');
+  if (box.querySelector('.empty')) box.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'action-item';
+  div.innerHTML = '<span class="step">' + a.step + '</span> — ' + a.summary;
+  box.appendChild(div);
+}
+
+function renderResponseStatus(r) {
+  if (r.rolled_back) {
+    const banner = document.createElement('div');
+    banner.className = 'banner rollback';
+    banner.textContent = 'AUTO-ROLLBACK: ' + r.rollback_reason;
+    el('actions').prepend(banner);
+  }
+  setStatus(r.status);
+}
+
+function renderReport(rep) {
+  el('report').innerHTML =
+    '<div class="report-line"><span>Verified claims</span><span>' + rep.verified + '</span></div>'
+    + '<div class="report-line"><span>Flagged (uncited)</span><span>' + rep.flagged + '</span></div>'
+    + '<div class="report-line"><span>Hallucination rate</span><span>' + pct(rep.hallucination_rate) + '</span></div>';
+}
+
+function handleEvent(evt) {
+  const p = evt.payload;
+  if (evt.type === 'tool_call') appendTrace(p);
+  else if (evt.type === 'verdict') renderVerdict(p);
+  else if (evt.type === 'injection') renderInjection(p);
+  else if (evt.type === 'decision') renderDecision(p);
+  else if (evt.type === 'action') appendAction(p);
+  else if (evt.type === 'response_status') renderResponseStatus(p);
+  else if (evt.type === 'report') renderReport(p);
+}
+
+function streamFrom(iid) {
+  if (es) es.close();
+  es = new EventSource('/api/cases/' + iid + '/stream?since=' + renderedCount);
+  es.onmessage = function (e) { handleEvent(JSON.parse(e.data)); renderedCount++; };
+  es.addEventListener('done', function () { es.close(); });
+}
+
+async function loadIncidents() {
+  const res = await fetch('/api/incidents');
+  const list = await res.json();
+  const sel = el('incidentSelect');
+  sel.innerHTML = list.map(function (i) {
+    return '<option value="' + i.id + '">' + i.id + ' — ' + i.signature
+      + ' (' + i.severity + (i.claimed_cve ? ', ' + i.claimed_cve : '') + ')</option>';
+  }).join('');
+}
+
+el('startBtn').onclick = async function () {
+  const iid = el('incidentSelect').value;
+  const mode = el('modeSelect').value;
+  currentIid = iid; renderedCount = 0;
+  el('trace').innerHTML = '';
+  el('evidenceChips').innerHTML = '';
+  el('decision').innerHTML = '<p class="empty">Awaiting close.</p>';
+  el('actions').innerHTML = '<p class="empty">—</p>';
+  el('report').innerHTML = '<p class="empty">—</p>';
+  el('verdictBox').innerHTML = '<span class="empty">investigating…</span>';
+  setStatus('investigating');
+
+  await fetch('/api/cases/' + iid + '/start?mode=' + mode, { method: 'POST' });
+  streamFrom(iid);
+  ['closeBtn', 'injReversal', 'injFirewall', 'injOverride'].forEach(function (id) {
+    el(id).disabled = false;
+  });
+  el('overrideBtn').disabled = true;
+};
+
+el('closeBtn').onclick = async function () {
+  await fetch('/api/cases/' + currentIid + '/close', { method: 'POST' });
+  streamFrom(currentIid);
+};
+
+el('overrideBtn').onclick = async function () {
+  await fetch('/api/cases/' + currentIid + '/close?override=true', { method: 'POST' });
+  streamFrom(currentIid);
+};
+
+[['injReversal', 'evidence_reversal'],
+ ['injFirewall', 'firewall_failure'],
+ ['injOverride', 'override_scenario']].forEach(function (pair) {
+  el(pair[0]).onclick = async function () {
+    await fetch('/api/cases/' + currentIid + '/inject/' + pair[1], { method: 'POST' });
+    streamFrom(currentIid);
+  };
+});
+
+loadIncidents();
+</script>
+</body>
+</html>
