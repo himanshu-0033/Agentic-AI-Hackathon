@@ -1,0 +1,75 @@
+{
+  "id": "A-1034",
+  "alert": {
+    "src": "203.0.113.22",
+    "dst": "10.2.1.168",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Apache Struts OGNL Injection",
+    "claimed_cve": "CVE-2017-5638",
+    "severity": "medium",
+    "ts": "2026-09-19T09:43:00Z",
+    "flow_id": "f7868"
+  },
+  "world": {
+    "assets": {
+      "10.2.1.168": {
+        "host": "host-10-2-1-168",
+        "os": "linux",
+        "criticality": "low",
+        "owner": "platform-team",
+        "services": {
+          "80": {
+            "product": "nginx",
+            "version": "1.24.0"
+          }
+        },
+        "peers": []
+      }
+    },
+    "cves": {
+      "CVE-2017-5638": {
+        "product": "apache-struts",
+        "patched_in": "2.5.13",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f7868": {
+        "direction": "inbound",
+        "bytes_out": 0,
+        "bytes_in": 64,
+        "duration_s": 0,
+        "state": "REFUSED",
+        "note": "SYN to closed port, part of /24 sweep"
+      }
+    },
+    "logs": {
+      "host-10-2-1-168": [
+        "[host-10-2-1-168] connection refused on 443 (service not listening)"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-1-168": {
+        "suspicious": false,
+        "tree": "nginx",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.22",
+        "dst": "10.2.1.168",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FALSE_POSITIVE",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "alerted service not running on that port; port-sweep noise"
+}

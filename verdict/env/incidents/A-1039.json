@@ -1,0 +1,70 @@
+{
+  "id": "A-1039",
+  "alert": {
+    "src": "10.0.0.5",
+    "dst": "10.2.2.235",
+    "dst_port": 22,
+    "proto": "tcp",
+    "signature": "ET SCAN Potential SSH Brute Force",
+    "claimed_cve": null,
+    "severity": "medium",
+    "ts": "2026-09-11T05:15:00Z",
+    "flow_id": "f7054"
+  },
+  "world": {
+    "assets": {
+      "10.2.2.235": {
+        "host": "host-10-2-2-235",
+        "os": "linux",
+        "criticality": "medium",
+        "owner": "platform-team",
+        "services": {
+          "22": {
+            "product": "openssh",
+            "version": "9.6"
+          }
+        },
+        "peers": []
+      }
+    },
+    "cves": {},
+    "flows": {
+      "f7054": {
+        "direction": "inbound",
+        "bytes_out": 4096,
+        "bytes_in": 8192,
+        "duration_s": 320,
+        "state": "ESTABLISHED",
+        "note": "interactive session from internal jump host"
+      }
+    },
+    "logs": {
+      "host-10-2-2-235": [
+        "[host-10-2-2-235] sshd: Accepted publickey for deploy from 10.0.0.5",
+        "[host-10-2-2-235] sudo: deploy : COMMAND=/usr/bin/systemctl restart api"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-2-235": {
+        "suspicious": false,
+        "tree": "sshd -> bash -> systemctl (known deploy)",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "10.0.0.5",
+        "dst": "10.2.2.235",
+        "port": 22,
+        "legit": true
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FALSE_POSITIVE",
+    "action": "close"
+  },
+  "adversarial": false,
+  "solve_rationale": "source is an internal admin jump box; publickey auth + known deploy"
+}

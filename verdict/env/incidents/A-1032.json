@@ -1,0 +1,75 @@
+{
+  "id": "A-1032",
+  "alert": {
+    "src": "203.0.113.247",
+    "dst": "10.2.3.24",
+    "dst_port": 8090,
+    "proto": "tcp",
+    "signature": "ET EXPLOIT Confluence OGNL RCE",
+    "claimed_cve": "CVE-2022-26134",
+    "severity": "medium",
+    "ts": "2026-09-11T02:14:00Z",
+    "flow_id": "f9320"
+  },
+  "world": {
+    "assets": {
+      "10.2.3.24": {
+        "host": "host-10-2-3-24",
+        "os": "linux",
+        "criticality": "low",
+        "owner": "platform-team",
+        "services": {
+          "80": {
+            "product": "nginx",
+            "version": "1.24.0"
+          }
+        },
+        "peers": []
+      }
+    },
+    "cves": {
+      "CVE-2022-26134": {
+        "product": "atlassian-confluence",
+        "patched_in": "7.18.1",
+        "exploit_maturity": "weaponized"
+      }
+    },
+    "flows": {
+      "f9320": {
+        "direction": "inbound",
+        "bytes_out": 0,
+        "bytes_in": 64,
+        "duration_s": 0,
+        "state": "REFUSED",
+        "note": "SYN to closed port, part of /24 sweep"
+      }
+    },
+    "logs": {
+      "host-10-2-3-24": [
+        "[host-10-2-3-24] connection refused on 8090 (service not listening)"
+      ]
+    },
+    "proc_trees": {
+      "host-10-2-3-24": {
+        "suspicious": false,
+        "tree": "nginx",
+        "persistence": null
+      }
+    },
+    "sessions": [
+      {
+        "src": "203.0.113.247",
+        "dst": "10.2.3.24",
+        "port": 8090,
+        "legit": false
+      }
+    ],
+    "firewall": []
+  },
+  "ground_truth": {
+    "verdict": "FALSE_POSITIVE",
+    "action": "monitor"
+  },
+  "adversarial": false,
+  "solve_rationale": "alerted service not running on that port; port-sweep noise"
+}
