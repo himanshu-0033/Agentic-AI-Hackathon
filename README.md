@@ -215,4 +215,7 @@ python tests/test_respond.py            # Phase 3 acceptance: all 3 injections
 
 ---
 
-See **[ROADMAP.md](ROADMAP.md)** for the build plan.
+See **[ROADMAP.md](ROADMAP.md)** for the build plan (all 4 phases built and tested),
+**[PITCH_DECK.html](PITCH_DECK.html)** for the presentation, **[DEMO_SCRIPT.md](DEMO_SCRIPT.md)**
+for the shot-by-shot video script, and **[SUBMISSION.md](SUBMISSION.md)** for the
+submission checklist and file naming.

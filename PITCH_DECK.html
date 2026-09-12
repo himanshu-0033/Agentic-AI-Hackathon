@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERDICT — Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121822; --panel2: #171f2c; --border: #223047;
+    --text: #d8e1ef; --dim: #7c8aa0; --accent: #4da3ff;
+    --h1: #ff5c66; --h2: #ffb84d; --h3: #8a94a6; --h4: #3ddc84;
+    --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); overflow: hidden; }
+  body { font-family: var(--sans); }
+  ::selection { background: var(--accent); color: #06121f; }
+
+  .slide-deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+  @media (min-width: 769px) {
+    .slide-deck {
+      max-width: calc(100vh * 16 / 9); max-height: calc(100vw * 9 / 16);
+      margin: auto; position: absolute; inset: 0;
+    }
+  }
+
+  .slide {
+    position: absolute; width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 64px 88px; opacity: 0; visibility: hidden; transition: opacity 0.35s;
+    background:
+      radial-gradient(1200px 500px at 85% -10%, rgba(77,163,255,0.06), transparent 60%),
+      var(--bg);
+  }
+  .slide.active { opacity: 1; visibility: visible; }
+  .slide-content { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1, h2, h3 { font-family: var(--mono); font-weight: 700; text-wrap: balance; line-height: 1.15; }
+  h1 { font-size: clamp(30px, 4.4vw, 54px); }
+  h2 { font-size: clamp(22px, 3vw, 34px); }
+  p { font-size: clamp(14px, 1.4vw, 18px); line-height: 1.6; color: var(--dim); max-width: 66ch; }
+  .lede { color: var(--text); font-size: clamp(15px, 1.6vw, 20px); max-width: 62ch; }
+
+  /* ---- shared components ---- */
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px 22px; }
+  .card h3 { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+  .card p { font-size: 13.5px; margin: 0; }
+  .chip {
+    font-family: var(--mono); font-size: 11.5px; color: var(--dim); background: var(--panel2);
+    border: 1px solid var(--border); border-radius: 4px; padding: 3px 9px; display: inline-block;
+  }
+  .stripe { width: 4px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
+
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-label { font-family: var(--mono); font-size: 12.5px; width: 190px; flex-shrink: 0; color: var(--text); }
+  .bar-track { flex: 1; height: 14px; background: var(--panel2); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 7px; }
+  .bar-pct { font-family: var(--mono); font-size: 12.5px; width: 54px; text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .fill-h1 { background: var(--h1); } .fill-h2 { background: var(--h2); }
+  .fill-h3 { background: var(--h3); } .fill-h4 { background: var(--h4); }
+
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+  .stat .num { font-family: var(--mono); font-size: clamp(30px, 3.6vw, 46px); font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat .num.good { color: var(--h4); } .stat .num.bad { color: var(--h1); }
+  .stat .lab { font-size: 12.5px; color: var(--dim); }
+
+  footer.slide-footer {
+    position: absolute; bottom: 28px; left: 88px; right: 88px;
+    display: flex; justify-content: space-between; font-family: var(--mono);
+    font-size: 11px; color: var(--dim); letter-spacing: 0.5px;
+  }
+
+  /* nav */
+  .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); transition: width 0.3s; z-index: 1000; }
+  .nav-controls { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; z-index: 1000; }
+  .nav-btn { background: var(--panel2); border: 1px solid var(--border); color: var(--text); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 16px; font-family: var(--mono); }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .slide-counter { font-family: var(--mono); color: var(--dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 768px) {
+    .slide { padding: 36px 28px; }
+    footer.slide-footer { left: 28px; right: 28px; }
+    .bar-label { width: 130px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="slide-deck">
+
+  <!-- 1: TITLE -->
+  <div class="slide active">
+    <div class="slide-content" style="align-items:flex-start; justify-content:center; gap:26px;">
+      <span class="eyebrow">Tech Zephyr 4.0 &middot; Agentic AI Hackathon &middot; Track 5: Cybersecurity &middot; PS9</span>
+      <h1 style="font-size:clamp(56px,9vw,120px); letter-spacing:-1px;">VERDICT</h1>
+      <p class="lede" style="max-width:56ch;">The alert is a hypothesis. Not a verdict.</p>
+      <p style="max-width:58ch;">An autonomous SOC agent that proves whether an attack actually succeeded — then takes the narrowest safe response.</p>
+    </div>
+    <footer class="slide-footer"><span>Team Verdict</span><span>IIT Bhubaneswar</span></footer>
+  </div>
+
+  <!-- 2: PROBLEM -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">The Problem</span>
+      <h1>Most "AI SOC agents" are classifiers wearing a badge.</h1>
+      <p class="lede">A NIDS alert names a CVE and a severity. That's a claim, not a fact — most attempts against most targets fail: wrong version, already patched, port closed. A system that reads the label and blocks is pattern-matching. It isn't investigating.</p>
+      <div style="display:flex; gap:20px; margin-top:12px; align-items:stretch; flex-wrap:wrap;">
+        <div class="card" style="flex:1.3; min-width:320px; display:flex; gap:14px;">
+          <div class="stripe" style="background:var(--h1);"></div>
+          <div>
+            <span class="chip" style="margin-bottom:8px; display:inline-block;">nids_alerts &middot; severity: low</span>
+            <h3 style="margin-top:8px;">ET EXPLOIT ProxyLogon SSRF &middot; CVE-2021-26855</h3>
+            <p>A label-only reading calls this benign because severity reads "low". The target is running an unpatched Exchange build — and it's compromised.</p>
+          </div>
+        </div>
+        <div class="card" style="flex:1; min-width:220px; text-align:left;">
+          <div class="stat">
+            <span class="num bad">35%</span>
+            <span class="lab">accuracy of an alert-label-only baseline on our 40-incident set</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>02 &middot; Problem</span></footer>
+  </div>
+
+  <!-- 3: APPROACH -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">The Approach</span>
+      <h1>Buy evidence until the question closes.</h1>
+      <p class="lede">Four competing hypotheses, live confidences, updated after every tool call. VERDICT keeps investigating only as long as the case is genuinely open — real incident A-1000, three tool calls, confidence sharpening in real time:</p>
+
+      <div style="display:flex; gap:28px; margin-top:8px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:300px;">
+          <span class="chip" style="margin-bottom:12px; display:inline-block;">after cmdb_asset (1 call)</span>
+          <div class="bar-row"><span class="bar-label">H1 succeeded</span><div class="bar-track"><div class="bar-fill fill-h1" style="width:32.5%;"></div></div><span class="bar-pct">33%</span></div>
+          <div class="bar-row"><span class="bar-label">H2 attempted&ndash;failed</span><div class="bar-track"><div class="bar-fill fill-h2" style="width:25%;"></div></div><span class="bar-pct">25%</span></div>
+          <div class="bar-row"><span class="bar-label">H3 scanner noise</span><div class="bar-track"><div class="bar-fill fill-h3" style="width:17.5%;"></div></div><span class="bar-pct">18%</span></div>
+          <div class="bar-row"><span class="bar-label">H4 benign</span><div class="bar-track"><div class="bar-fill fill-h4" style="width:25%;"></div></div><span class="bar-pct">25%</span></div>
+        </div>
+        <div style="flex:1; min-width:300px;">
+          <span class="chip" style="margin-bottom:12px; display:inline-block;">after edr_processtree (3 calls)</span>
+          <div class="bar-row"><span class="bar-label">H1 succeeded</span><div class="bar-track"><div class="bar-fill fill-h1" style="width:98.9%;"></div></div><span class="bar-pct">99%</span></div>
+          <div class="bar-row"><span class="bar-label">H2 attempted&ndash;failed</span><div class="bar-track"><div class="bar-fill fill-h2" style="width:0.5%;"></div></div><span class="bar-pct">0%</span></div>
+          <div class="bar-row"><span class="bar-label">H3 scanner noise</span><div class="bar-track"><div class="bar-fill fill-h3" style="width:0.2%;"></div></div><span class="bar-pct">0%</span></div>
+          <div class="bar-row"><span class="bar-label">H4 benign</span><div class="bar-track"><div class="bar-fill fill-h4" style="width:0.3%;"></div></div><span class="bar-pct">0%</span></div>
+        </div>
+      </div>
+      <p style="margin-top:4px;">Tool selection is information-gain, not a fixed chain: at each step, "which single fact most collapses the hypothesis set?"</p>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>03 &middot; Approach</span></footer>
+  </div>
+
+  <!-- 4: ARCHITECTURE -->
+  <div class="slide">
+    <div class="slide-content" style="flex-direction:row; gap:56px; align-items:center;">
+      <div style="flex:1;">
+        <span class="eyebrow">Architecture</span>
+        <h1 style="margin-top:10px;">One loop. Nine steps. State persists across all of them.</h1>
+        <p style="margin-top:14px;">A single orchestrator plus one Evidence Auditor verifier — that's the whole architecture. The brief scores zero points for agent count; we didn't build a six-agent mesh to look busy.</p>
+        <p style="margin-top:10px;"><span class="chip">ledger</span> <span class="chip">evidence_store</span> <span class="chip">action_log</span> <span class="chip">case_status</span> — persisted per case.</p>
+      </div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:6px; font-family:var(--mono); font-size:13px;">
+        <div class="loop-step" style="border-left:2px solid var(--accent); padding:6px 0 6px 14px;"><b style="color:var(--accent);">1&nbsp; INGEST</b> <span style="color:var(--dim);">— alert &rarr; structured claim</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--accent); padding:6px 0 6px 14px;"><b style="color:var(--accent);">2&nbsp; PLAN</b> <span style="color:var(--dim);">— highest information-gain tool</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--accent); padding:6px 0 6px 14px;"><b style="color:var(--accent);">3&nbsp; ACT</b> <span style="color:var(--dim);">— call one read tool</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--accent); padding:6px 0 6px 14px;"><b style="color:var(--accent);">4&nbsp; OBSERVE</b> <span style="color:var(--dim);">— update the ledger, cite the artifact</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--accent); padding:6px 0 6px 14px;"><b style="color:var(--accent);">5&nbsp; STOP-CHECK</b> <span style="color:var(--dim);">— confident, or budget spent</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--h2); padding:6px 0 6px 14px;"><b style="color:var(--h2);">6&nbsp; DECIDE</b> <span style="color:var(--dim);">— tier + blast-radius gate</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--h2); padding:6px 0 6px 14px;"><b style="color:var(--h2);">7&nbsp; EXECUTE</b> <span style="color:var(--dim);">— narrowest sufficient action</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--h2); padding:6px 0 6px 14px;"><b style="color:var(--h2);">8&nbsp; VERIFY</b> <span style="color:var(--dim);">— re-probe, never trust a 200 OK</span></div>
+        <div class="loop-step" style="border-left:2px solid var(--h4); padding:6px 0 6px 14px;"><b style="color:var(--h4);">9&nbsp; WATCH</b> <span style="color:var(--dim);">— new evidence can reopen the case</span></div>
+      </div>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>04 &middot; Architecture</span></footer>
+  </div>
+
+  <!-- 5: BLAST RADIUS -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">Mechanism &middot; Response</span>
+      <h1>The narrowest rule that works. Escalate before anything wider.</h1>
+      <p class="lede">Before any firewall action, VERDICT walks the CMDB for peer dependencies and live sessions. A single-target attack gets a scoped block; only a multi-target spray forces a wider rule — and a wider rule only executes autonomously if it costs nothing real.</p>
+      <div style="display:flex; gap:20px; margin-top:8px; flex-wrap:wrap;">
+        <div class="card" style="flex:1; min-width:300px; display:flex; gap:14px;">
+          <div class="stripe" style="background:var(--h4);"></div>
+          <div>
+            <h3 style="color:var(--h4);">narrow &middot; executes autonomously</h3>
+            <p class="chip" style="margin:6px 0;">block 203.0.113.191 &rarr; 10.2.2.16:443</p>
+            <p>Single target. Collateral: <b style="color:var(--text);">0 legitimate sessions, 0 users</b>.</p>
+          </div>
+        </div>
+        <div class="card" style="flex:1; min-width:300px; display:flex; gap:14px; border-color:var(--h1);">
+          <div class="stripe" style="background:var(--h1);"></div>
+          <div>
+            <h3 style="color:var(--h1);">broad &middot; escalates to a human</h3>
+            <p class="chip" style="margin:6px 0;">block 203.0.113.191 &rarr; * (all ports/dst)</p>
+            <p>Attacker spraying 2 targets through a shared NAT. Collateral: <b style="color:var(--text);">4 legitimate sessions, 340 users</b>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>05 &middot; Blast Radius</span></footer>
+  </div>
+
+  <!-- 6: EVIDENCE AUDITOR -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">Mechanism &middot; Trust</span>
+      <h1>Every claim in the report cites a real artifact. Or it doesn't survive.</h1>
+      <p class="lede">A second pass parses the incident report and checks each evidentiary claim against the case's actual evidence store. Uncited claims are stripped and flagged before a human ever reads them.</p>
+      <div style="display:flex; gap:20px; margin-top:8px; flex-wrap:wrap;">
+        <div class="card" style="flex:1; min-width:300px; display:flex; gap:14px;">
+          <div class="stripe" style="background:var(--h4);"></div>
+          <div>
+            <h3 style="color:var(--h4);">verified</h3>
+            <p>"Target patched at/above patched_in: not exploitable"</p>
+            <p class="chip" style="margin-top:8px;">cites cvematch_apache-log4j_2.17.1 &mdash; found in evidence store</p>
+          </div>
+        </div>
+        <div class="card" style="flex:1; min-width:300px; display:flex; gap:14px; border-color:var(--h1);">
+          <div class="stripe" style="background:var(--h1);"></div>
+          <div>
+            <h3 style="color:var(--h1);">flagged &amp; stripped</h3>
+            <p>A claim citing an artifact that was never actually retrieved</p>
+            <p class="chip" style="margin-top:8px;">cites cmdb_99.99.99.99 &mdash; no such artifact in this case</p>
+          </div>
+        </div>
+      </div>
+      <div class="stat" style="margin-top:6px;"><span class="num good">0%</span><span class="lab">measured hallucination rate, across every real (uninjected) run</span></div>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>06 &middot; Evidence Auditor</span></footer>
+  </div>
+
+  <!-- 7: ADAPTATION -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">Adaptation &middot; Live, On Demand</span>
+      <h1>Three ways we break it. On camera. Every time.</h1>
+      <div style="display:flex; gap:16px; margin-top:6px; align-items:stretch; flex-wrap:wrap;">
+        <div class="card" style="flex:1; min-width:230px;">
+          <span class="chip" style="color:var(--h2); border-color:var(--h2);">01 &middot; evidence reversal</span>
+          <h3 style="margin-top:10px;">Closed FAILED. Late beacon evidence arrives.</h3>
+          <p>Case reopens, re-derives from scratch, verdict flips to SUCCEEDED — unprompted.</p>
+        </div>
+        <div class="card" style="flex:1; min-width:230px;">
+          <span class="chip" style="color:var(--h2); border-color:var(--h2);">02 &middot; silent firewall failure</span>
+          <h3 style="margin-top:10px;">fw_apply returns 200 OK. Twice. Traffic still flows.</h3>
+          <p>The agent never trusts the response — it re-probes, catches the lie, falls back to EDR quarantine.</p>
+        </div>
+        <div class="card" style="flex:1.15; min-width:260px; border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 0 32px rgba(77,163,255,0.12);">
+          <span class="chip" style="color:var(--accent); border-color:var(--accent);">03 &middot; override &rarr; auto-rollback</span>
+          <h3 style="margin-top:10px; color:var(--text);">Agent escalates. Human overrides. Agent complies —</h3>
+          <p style="color:var(--text);">then re-probes, finds a legitimate session dropped, and <b>rolls itself back</b> to the narrow rule, reporting exactly why.</p>
+        </div>
+      </div>
+      <p style="margin-top:4px;">An agent that obeys a human, catches the human's mistake, and safely undoes it.</p>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>07 &middot; Adaptation</span></footer>
+  </div>
+
+  <!-- 8: RESULTS -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">Results &middot; 40 Synthetic Incidents, Ground Truth Known</span>
+      <h1>The gap isn't close.</h1>
+      <div style="display:flex; gap:36px; margin:6px 0 4px; flex-wrap:wrap;">
+        <div class="stat"><span class="num good">100%</span><span class="lab">VERDICT accuracy</span></div>
+        <div class="stat"><span class="num bad">35%</span><span class="lab">label-only baseline</span></div>
+        <div class="stat"><span class="num">2.85</span><span class="lab">mean tool calls to verdict</span></div>
+        <div class="stat"><span class="num good">6 / 6</span><span class="lab">adversarial cases solved</span></div>
+        <div class="stat"><span class="num good">0%</span><span class="lab">hallucination rate</span></div>
+      </div>
+      <div style="width:min(540px,100%); height:190px; margin-top:6px;">
+        <canvas id="resultsChart"></canvas>
+      </div>
+      <p>Every incident is solvable by a human using the same 9 tools — verified with a hand playbook before any agent number was trusted.</p>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>08 &middot; Results</span></footer>
+  </div>
+
+  <!-- 9: CHALLENGES -->
+  <div class="slide">
+    <div class="slide-content">
+      <span class="eyebrow">Challenges</span>
+      <h1>What was actually hard to get right.</h1>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:6px;">
+        <div class="card"><h3>A solvable-but-not-trivial environment</h3><p>40 incidents where the ground truth is genuinely derivable, not guessable — verified with a hand-playbook acceptance test before trusting any agent number.</p></div>
+        <div class="card"><h3>Autonomy without hallucination</h3><p>The LLM planner chooses <i>what</i> to inspect next; every tool argument is still resolved deterministically from real evidence, so it can never invent an IP or a version.</p></div>
+        <div class="card"><h3>Blast radius has to emerge from behavior</h3><p>The override scenario only escalates because the attacker is genuinely spraying two targets — the collateral number comes from real session data, never hand-tuned.</p></div>
+        <div class="card"><h3>Verification that actually verifies</h3><p>A 200 OK from the firewall proves nothing. Only re-probing the live ruleset does — that distinction is the entire silent-failure mechanism.</p></div>
+      </div>
+    </div>
+    <footer class="slide-footer"><span>VERDICT</span><span>09 &middot; Challenges</span></footer>
+  </div>
+
+  <!-- 10: CONCLUSION -->
+  <div class="slide">
+    <div class="slide-content" style="gap:26px;">
+      <span class="eyebrow">Conclusion</span>
+      <h1>An agent that investigates before it acts, and undoes its own mistakes.</h1>
+      <p class="lede">VERDICT doesn't classify alerts — it adjudicates them, computes the cost of being wrong before acting, and audits its own evidence. That's the difference between automation and judgment.</p>
+      <h2 style="color:var(--accent); margin-top:8px;">The alert is a hypothesis. Not a verdict.</h2>
+    </div>
+    <footer class="slide-footer"><span>github.com/himanshu-0033/Agentic-AI-Hackathon</span><span>Team Verdict &middot; PS9</span></footer>
+  </div>
+
+</div>
+
+<div class="nav-controls">
+  <button class="nav-btn" onclick="prevSlide()">&larr;</button>
+  <span class="slide-counter"><span id="current">1</span> / <span id="total">10</span></span>
+  <button class="nav-btn" onclick="nextSlide()">&rarr;</button>
+</div>
+
+<script>
+  let current = 1;
+  const total = document.querySelectorAll('.slide').length;
+  document.getElementById('total').textContent = total;
+
+  function showSlide(n) {
+    if (n < 1) n = 1;
+    if (n > total) n = total;
+    current = n;
+    document.querySelectorAll('.slide').forEach(function (s, i) {
+      s.classList.toggle('active', i === n - 1);
+    });
+    document.getElementById('current').textContent = n;
+    document.getElementById('progressBar').style.width = (n / total * 100) + '%';
+  }
+  function nextSlide() { showSlide(current + 1); }
+  function prevSlide() { showSlide(current - 1); }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.nav-controls')) nextSlide();
+  });
+
+  showSlide(1);
+
+  new Chart(document.getElementById('resultsChart'), {
+    type: 'bar',
+    data: {
+      labels: ['VERDICT (agent)', 'Label-only baseline'],
+      datasets: [{
+        data: [100, 35],
+        backgroundColor: ['#3ddc84', '#ff5c66'],
+        borderRadius: 4,
+        barThickness: 46
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.06)' },
+             ticks: { color: '#7c8aa0', font: { family: 'IBM Plex Mono', size: 11 }, callback: function(v){ return v + '%'; } } },
+        y: { grid: { display: false }, ticks: { color: '#d8e1ef', font: { family: 'IBM Plex Mono', size: 12.5 } } }
+      }
+    }
+  });
+</script>
+</body>
+</html>
