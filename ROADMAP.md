@@ -11,8 +11,8 @@ The ordering rule for the whole build: **the environment is built before the age
 | # | Task | Done |
 |---|------|:----:|
 | 0.1 | Lock the team name and the submission naming format: `TeamName_video_agentic`, `TeamName_github_agentic` | ☐ |
-| 0.2 | Python 3.11 venv, `requirements.txt` — only `anthropic`, `fastapi`, `uvicorn`, `pydantic` | ☐ |
-| 0.3 | API key in `.env`, `.env` in `.gitignore`. **Never commit a key.** | ☐ |
+| 0.2 | Python 3.11 venv. Phases 1-2 are stdlib-only; the LLM planner calls Groq (OpenAI-compatible) over `urllib` — no SDK. `requirements.txt` holds only the Phase 4 UI deps (`fastapi`, `uvicorn`, `pydantic`) | ☐ |
+| 0.3 | API key in `.env` (`GROQ_API_KEY`), `.env` in `.gitignore`. **Never commit a key.** | ☐ |
 | 0.4 | Agree the repo layout below and push a skeleton so everyone pulls the same tree | ☐ |
 
 ```
@@ -71,7 +71,7 @@ This is the phase that decides whether you win. Budget generously.
 
 **Acceptance:** verdict accuracy above 75% and mean tool calls under 10, with no code that special-cases a specific incident ID.
 
-> **DONE.** Rule-mode result on the 40-case set: **100% accuracy, 2.9 mean tool calls, 6/6 adversarial**. Baseline (label-only) scores **35%**. Verified by `tests/test_agent.py`. LLM planner mode (`--mode llm`, Opus 5) is wired for the demo; it needs an API key. All state persisted to `verdict/state/<id>.json`.
+> **DONE.** Rule-mode result on the 40-case set: **100% accuracy, 2.9 mean tool calls, 6/6 adversarial**. Baseline (label-only) scores **35%**. Verified by `tests/test_agent.py`. LLM planner mode (`--mode llm`, Groq `openai/gpt-oss-120b`) is wired and verified end-to-end (100% on the sampled run); it needs a `GROQ_API_KEY`. All state persisted to `verdict/state/<id>.json`.
 
 ---
 

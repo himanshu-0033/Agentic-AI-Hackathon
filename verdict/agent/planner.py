@@ -4,9 +4,10 @@ Two modes, one interface:
 
   rule  — deterministic information-gain policy. Free, offline, reproducible.
           This is what the eval scoreboard runs on.
-  llm   — Claude (Opus 5) picks the tool and explains why, for the demo. Args
-          are still resolved deterministically from real evidence, so the model
-          can choose *what to look at* but can never invent an IP or version.
+  llm   — an LLM (Groq, OpenAI-compatible API) picks the tool and explains why,
+          for the demo. Args are still resolved deterministically from real
+          evidence, so the model chooses *what to look at* but can never invent
+          an IP or version.
 
 An action is {"tool", "args", "rationale"} or None to stop investigating.
 """
@@ -14,10 +15,36 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.error
+import urllib.request
+from pathlib import Path
 from typing import Any, Optional
 
 from ..env import tools as toolmod
 from .ledger import HYPOTHESES, Ledger
+
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+
+def _load_dotenv() -> None:
+    """Minimal .env reader so `GROQ_API_KEY=...` in a project .env just works.
+
+    No python-dotenv dependency; only sets keys not already in the environment.
+    """
+    env = Path(__file__).resolve().parents[2] / ".env"
+    if not env.exists():
+        return
+    for line in env.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
+
+DEFAULT_MODEL = os.getenv("VERDICT_MODEL", "openai/gpt-oss-120b")
 
 Action = Optional[dict]
 
@@ -121,9 +148,36 @@ _LLM_SYSTEM = (
 )
 
 
-def _llm_next(alert: dict, ledger: Ledger, ev: dict, called: set, model: str) -> Action:
-    import anthropic  # imported lazily so rule mode needs no dependency
+def _call_groq(system: str, user: str, model: str) -> str:
+    """One chat completion against Groq's OpenAI-compatible endpoint (stdlib only)."""
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        raise RuntimeError("GROQ_API_KEY not set")
+    body = json.dumps({
+        "model": model,
+        "temperature": 0,
+        "max_tokens": 512,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        GROQ_URL, data=body,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            # Groq's Cloudflare edge 403s the default Python-urllib UA (error 1010).
+            "User-Agent": "verdict-soc-agent/1.0",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        payload = json.loads(resp.read().decode("utf-8"))
+    return payload["choices"][0]["message"]["content"].strip()
 
+
+def _llm_next(alert: dict, ledger: Ledger, ev: dict, called: set, model: str) -> Action:
     available = [t for t in toolmod.READ_TOOLS if t != "env_probe"]
     seen = {t: _summarise(t, a) for t, a in ev.items()}
     prompt = {
@@ -135,16 +189,7 @@ def _llm_next(alert: dict, ledger: Ledger, ev: dict, called: set, model: str) ->
         "tools_available": available,
         "tools_already_called": sorted({t for t, _ in called}),
     }
-    client = anthropic.Anthropic()
-    resp = client.messages.create(
-        model=model,
-        max_tokens=1024,
-        thinking={"type": "adaptive"},
-        output_config={"effort": "low"},
-        system=_LLM_SYSTEM,
-        messages=[{"role": "user", "content": json.dumps(prompt)}],
-    )
-    text = "".join(b.text for b in resp.content if b.type == "text").strip()
+    text = _call_groq(_LLM_SYSTEM, json.dumps(prompt), model)
     choice = _parse_choice(text)
     if choice is None or choice.get("tool") in (None, "null"):
         return None
@@ -191,7 +236,7 @@ def _key(args: dict) -> tuple:
 # --- entry point -------------------------------------------------------------
 
 def next_action(alert, ledger, ev, called, mode: str = "rule",
-                model: str = "claude-opus-5") -> Action:
+                model: str = DEFAULT_MODEL) -> Action:
     if mode == "llm":
         try:
             return _llm_next(alert, ledger, ev, called, model)
@@ -201,5 +246,5 @@ def next_action(alert, ledger, ev, called, mode: str = "rule",
 
 
 def default_mode() -> str:
-    """LLM if a key is configured and the caller opts in; rule otherwise."""
-    return "llm" if os.getenv("ANTHROPIC_API_KEY") and os.getenv("VERDICT_PLANNER") == "llm" else "rule"
+    """LLM if a Groq key is configured and the caller opts in; rule otherwise."""
+    return "llm" if os.getenv("GROQ_API_KEY") and os.getenv("VERDICT_PLANNER") == "llm" else "rule"

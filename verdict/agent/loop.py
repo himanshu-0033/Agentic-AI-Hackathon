@@ -25,7 +25,7 @@ STOP_CONFIDENCE = 0.85
 TOOL_BUDGET = 12
 
 
-def investigate(world: World, mode: str = "rule", model: str = "claude-opus-5",
+def investigate(world: World, mode: str = "rule", model: str = planner.DEFAULT_MODEL,
                 persist: bool = True) -> dict:
     ledger = Ledger()
     evidence: dict[str, dict] = {}          # tool name -> latest artifact

@@ -13,11 +13,12 @@ import argparse
 import json
 
 from ..agent.loop import investigate
+from ..agent.planner import DEFAULT_MODEL
 from ..env.loader import all_incident_ids, load_incident, load_world
 from .baseline import baseline_verdict
 
 
-def run(mode: str = "rule", limit: int | None = None, model: str = "claude-opus-5") -> dict:
+def run(mode: str = "rule", limit: int | None = None, model: str = DEFAULT_MODEL) -> dict:
     ids = all_incident_ids()
     if limit:
         ids = ids[:limit]
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--mode", choices=["rule", "llm"], default="rule")
     ap.add_argument("-n", "--limit", type=int, default=None)
-    ap.add_argument("--model", default="claude-opus-5")
+    ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--json", action="store_true", help="print the summary as JSON too")
     args = ap.parse_args()
     out = run(mode=args.mode, limit=args.limit, model=args.model)
