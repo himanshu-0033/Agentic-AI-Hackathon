@@ -33,8 +33,8 @@ def investigate(world: World, mode: str = "rule", model: str = planner.DEFAULT_M
     called: set[tuple] = set()
     trace: list[dict] = []
 
-    # 1. INGEST
-    alert = toolmod.nids_alerts(world)["alerts"][-1]
+    # 1. INGEST — index [0] is always the canonical alert; see nids_alerts docstring
+    alert = toolmod.nids_alerts(world)["alerts"][0]
 
     stop_reason = "budget_exhausted"
     for _ in range(TOOL_BUDGET):
@@ -88,6 +88,26 @@ def investigate(world: World, mode: str = "rule", model: str = planner.DEFAULT_M
             json.dumps(result, indent=2), encoding="utf-8"
         )
     return result
+
+
+def watch(world: World, prior: dict, mode: str = "rule", model: str = "") -> dict:
+    """Step 9: re-run the investigation from scratch against the (possibly
+    mutated) world and check whether new evidence overturns the prior verdict.
+
+    A fresh investigate() call naturally re-derives from current world state —
+    no separate 'watch' state machine needed. Reopening a closed case IS just
+    investigating again and diffing the verdict.
+    """
+    kwargs = {"mode": mode, "persist": False}
+    if model:
+        kwargs["model"] = model
+    fresh = investigate(world, **kwargs)
+    return {
+        "reopened": fresh["verdict"] != prior["verdict"],
+        "prior_verdict": prior["verdict"],
+        "new_verdict": fresh["verdict"],
+        "new_investigation": fresh,
+    }
 
 
 if __name__ == "__main__":

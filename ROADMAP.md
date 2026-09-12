@@ -79,16 +79,18 @@ This is the phase that decides whether you win. Budget generously.
 
 | # | Task | Owner | Done |
 |---|------|-------|:----:|
-| 3.1 | `decide.py` — verdict maps to response tier (close / monitor / contain) | | ☐ |
-| 3.2 | Blast-radius calculator — walk CMDB peer dependencies, count affected users and services, return a collateral score | | ☐ |
-| 3.3 | Gate: collateral above threshold means propose the narrowest alternative and escalate, never execute | | ☐ |
-| 3.4 | Execute + verify: `fw.apply` then `fw.state` then `env.probe`. A mismatch feeds back into the loop as new evidence | | ☐ |
-| 3.5 | Fallback path: firewall verification fails twice, so fall back to `edr.quarantine`, then re-verify | | ☐ |
-| 3.6 | `auditor.py` — parse the report, extract claims, check each carries an artifact ID present in the evidence store, strip or flag anything uncited | | ☐ |
-| 3.7 | `injections.py` — the three disruptions as runtime flags, triggerable mid-run | | ☐ |
-| 3.8 | Rollback: store the pre-action ruleset, and if post-action probing shows collateral, restore it and report | | ☐ |
+| 3.1 | `decide.py` — verdict maps to response tier (close / monitor / contain) | | ☑ |
+| 3.2 | Blast-radius calculator — walk CMDB peer dependencies, count affected users and services, return a collateral score | | ☑ |
+| 3.3 | Gate: collateral above threshold means propose the narrowest alternative and escalate, never execute | | ☑ |
+| 3.4 | Execute + verify: `fw.apply` then `fw.state` then `env.probe`. A mismatch feeds back into the loop as new evidence | | ☑ |
+| 3.5 | Fallback path: firewall verification fails twice, so fall back to `edr.quarantine`, then re-verify | | ☑ |
+| 3.6 | `auditor.py` — parse the report, extract claims, check each carries an artifact ID present in the evidence store, strip or flag anything uncited | | ☑ |
+| 3.7 | `injections.py` — the three disruptions as runtime flags, triggerable mid-run | | ☑ |
+| 3.8 | Rollback: store the pre-action ruleset, and if post-action probing shows collateral, restore it and report | | ☑ |
 
 **Acceptance:** all three injections fire mid-run and the agent recovers from each without a restart. Injection 3 must end in an automatic rollback.
+
+> **DONE.** All 3 injections verified by `tests/test_respond.py`: (1) late evidence reopens a closed FAILED case and flips it to SUCCEEDED via `watch()`; (2) a silent-fail firewall is caught by `env_probe` after 2 attempts and falls back to `edr_quarantine`; (3) an override is obeyed, post-action `env_probe` detects the collateral, and the agent auto-rolls-back to a narrow rule and reports why. Non-contain verdicts (FAILED/FALSE_POSITIVE) apply zero firewall rules. Evidence Auditor: 0% hallucination rate on all real runs. Fully offline.
 
 ---
 

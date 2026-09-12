@@ -122,9 +122,19 @@ def _rule_next(alert: dict, ledger: Ledger, ev: dict, called: set) -> Action:
                            "would confirm H1 over H2.")
             return act("pcap_flow",
                        "Corroborate compromise with an outbound beacon/exfil flow.")
-        # 5. not exploitable -> confirm the failed attempt via the flow, then stop
-        return act("pcap_flow",
-                   "Target patched; a RST/no-data flow confirms H2 (attempt failed).")
+        # 5. not exploitable -> confirm the failed attempt via the flow
+        if "pcap_flow" not in ev:
+            return act("pcap_flow",
+                       "Target patched; a RST/no-data flow confirms H2 (attempt failed).")
+        # 5b. but a patched target showing a live beacon is a contradiction —
+        # don't take 'patched' at face value, check for compromise via another
+        # vector (this is what lets late/reversing evidence actually be acted on)
+        flow = ev["pcap_flow"]
+        if flow.get("state") == "ESTABLISHED" and flow.get("bytes_out", 0) > 10000:
+            return act("edr_processtree",
+                       "Patched-but-active beacon contradicts a clean failed attempt; "
+                       "checking for compromise via another vector before closing H2.")
+        return None  # clean RST/no-data confirms H2; nothing more to gather
 
     # 6. no CVE claim -> benign vs. something: logs then process tree
     if "logs_query" not in ev:

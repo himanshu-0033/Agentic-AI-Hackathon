@@ -19,7 +19,13 @@ from .world import World, vtuple
 
 
 def nids_alerts(world: World) -> dict:
-    """The alert(s) currently visible for this case, newest last."""
+    """The alert(s) currently visible for this case.
+
+    alerts[0] is always the CANONICAL incident record (src/dst/port/CVE/...) —
+    callers ingest from that. Any items after it are supplementary late notes
+    (e.g. injected new evidence); they carry their own partial fields and are
+    never a replacement for the canonical record.
+    """
     alerts = [world.alert] + world.alert.get("_late", [])
     return {"artifact_id": f"alert_{world.incident_id}", "alerts": alerts}
 
