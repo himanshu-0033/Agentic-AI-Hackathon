@@ -128,7 +128,7 @@ function setStatus(s) {
   const chip = el('statusChip');
   chip.textContent = s;
   const colors = { idle:'#223047', investigated:'#2a3a1e', closed:'#16241a', contained:'#16241a',
-                    escalated:'#2a1414', rolled_back_to_narrow:'#16241a', failed:'#2a1414' };
+                    escalated:'#2a1414', rolled_back_to_narrow:'#16241a', rollback_failed:'#2a1414', failed:'#2a1414' };
   chip.style.background = colors[s] || '#223047';
 }
 
@@ -144,11 +144,24 @@ function updateLedger(conf) {
 }
 
 function appendTrace(step) {
+  // step.confidence is the full {H1..H4} ledger snapshot after this call —
+  // animate the bars here, per step, not just once at the final verdict.
+  updateLedger(step.confidence || {});
+
   const div = document.createElement('div');
   div.className = 'trace-item';
-  div.innerHTML = '<div class="tool">&rarr; ' + step.tool + '</div>'
-    + '<div class="why">' + step.rationale + '</div>'
-    + '<div class="obs">' + step.evidence_reason + '</div>';
+  const tool = document.createElement('div');
+  const why = document.createElement('div');
+  const obs = document.createElement('div');
+  tool.className = 'tool';
+  why.className = 'why';
+  obs.className = 'obs';
+  tool.textContent = '→ ' + step.tool;
+  why.textContent = step.rationale;
+  obs.textContent = step.evidence_reason;
+  div.appendChild(tool);
+  div.appendChild(why);
+  div.appendChild(obs);
   const t = el('trace');
   if (t.querySelector('.empty')) t.innerHTML = '';
   t.appendChild(div);
@@ -161,46 +174,69 @@ function appendTrace(step) {
 }
 
 function renderVerdict(v) {
-  updateLedger(v.confidence || {});
+  // v.confidence here is a single number (the top hypothesis's confidence),
+  // not the {H1..H4} dict — the bars are already current from the last
+  // appendTrace() call, so don't touch them here.
   const box = el('verdictBox');
+  box.innerHTML = '';
   if (v.reopened === false) {
-    box.innerHTML = '<span class="empty">' + v.note + '</span>';
+    const empty = document.createElement('span');
+    empty.className = 'empty';
+    empty.textContent = v.note;
+    box.appendChild(empty);
     return;
   }
-  let extra = '';
   if (v.reopened) {
-    extra = '<div class="banner injection" style="margin-top:8px;">'
-      + 'REOPENED: prior verdict ' + v.prior_verdict + ' &rarr; new evidence changes this to ' + v.verdict
-      + '</div>';
+    const reopen = document.createElement('div');
+    reopen.className = 'banner injection';
+    reopen.style.marginTop = '8px';
+    reopen.textContent = `REOPENED: prior verdict ${v.prior_verdict} -> new evidence changes this to ${v.verdict}`;
+    box.appendChild(reopen);
   }
-  box.innerHTML = '<div class="v">' + v.verdict + '</div>'
-    + '<div class="empty">confidence ' + pct(v.confidence[v.top_hypothesis]) + ' &middot; '
-    + v.tool_calls + ' tool calls &middot; stopped: ' + v.stop_reason + '</div>' + extra;
+  const verdict = document.createElement('div');
+  const detail = document.createElement('div');
+  verdict.className = 'v';
+  detail.className = 'empty';
+  verdict.textContent = v.verdict;
+  detail.textContent = `confidence ${pct(v.confidence)} · ${v.tool_calls} tool calls · stopped: ${v.stop_reason}`;
+  box.appendChild(verdict);
+  box.appendChild(detail);
 }
 
 function renderInjection(p) {
   const banner = document.createElement('div');
   banner.className = 'banner injection';
-  banner.textContent = 'INJECTED — ' + p.name + ': ' + p.message;
+  banner.textContent = 'INJECTED - ' + p.name + ': ' + p.message;
   el('trace').appendChild(banner);
 }
 
 function renderDecision(d) {
-  let banner = '';
+  const container = el('decision');
+  container.innerHTML = '';
   if (d.escalate) {
-    banner = '<div class="banner escalate">ESCALATED — blast radius too high: ' + d.reason + '</div>';
+    const b = document.createElement('div');
+    b.className = 'banner escalate';
+    b.textContent = `ESCALATED: blast radius too high: ${d.reason}`;
+    container.appendChild(b);
     el('overrideBtn').disabled = false;
   } else {
     el('overrideBtn').disabled = true;
   }
-  let ruleLine = '';
+  const decision = document.createElement('div');
+  const reason = document.createElement('div');
+  const rule = document.createElement('div');
+  const tier = document.createElement('div');
+  tier.innerHTML = '<b>Tier:</b> ' + d.tier;
+  reason.className = 'empty';
+  reason.textContent = d.reason;
   if (d.rule) {
-    ruleLine = '<div class="empty">rule: ' + d.rule.scope + ' block ' + d.rule.src
-      + ' &rarr; ' + d.rule.dst + ':' + d.rule.port + '</div>';
+    rule.className = 'empty';
+    rule.textContent = 'rule: ' + d.rule.scope + ' block ' + d.rule.src + ' -> ' + d.rule.dst + ':' + d.rule.port;
   }
-  el('decision').innerHTML = banner
-    + '<div><b>Tier:</b> ' + d.tier + '</div>'
-    + '<div class="empty">' + d.reason + '</div>' + ruleLine;
+  decision.appendChild(tier);
+  decision.appendChild(reason);
+  if (d.rule) decision.appendChild(rule);
+  container.appendChild(decision);
 }
 
 function appendAction(a) {
@@ -208,25 +244,46 @@ function appendAction(a) {
   if (box.querySelector('.empty')) box.innerHTML = '';
   const div = document.createElement('div');
   div.className = 'action-item';
-  div.innerHTML = '<span class="step">' + a.step + '</span> — ' + a.summary;
+  const step = document.createElement('span');
+  step.className = 'step';
+  step.textContent = a.step;
+  div.appendChild(step);
+  div.appendChild(document.createTextNode(' — ' + a.summary));
   box.appendChild(div);
 }
 
 function renderResponseStatus(r) {
+  // rollback_reason is populated only on a FAILED/skipped rollback attempt —
+  // null means it succeeded cleanly, so don't print "null" as if it were one.
   if (r.rolled_back) {
     const banner = document.createElement('div');
     banner.className = 'banner rollback';
-    banner.textContent = 'AUTO-ROLLBACK: ' + r.rollback_reason;
+    banner.textContent = 'AUTO-ROLLBACK: override caused collateral damage — '
+      + 'restored to the narrow rule and verified the legitimate session recovered.';
+    el('actions').prepend(banner);
+  } else if (r.rollback_reason) {
+    const banner = document.createElement('div');
+    banner.className = 'banner escalate';
+    banner.textContent = 'ROLLBACK FAILED: ' + r.rollback_reason;
     el('actions').prepend(banner);
   }
   setStatus(r.status);
 }
 
 function renderReport(rep) {
-  el('report').innerHTML =
-    '<div class="report-line"><span>Verified claims</span><span>' + rep.verified + '</span></div>'
-    + '<div class="report-line"><span>Flagged (uncited)</span><span>' + rep.flagged + '</span></div>'
-    + '<div class="report-line"><span>Hallucination rate</span><span>' + pct(rep.hallucination_rate) + '</span></div>';
+  el('report').innerHTML = '';
+  const verified = document.createElement('div');
+  const flagged = document.createElement('div');
+  const rate = document.createElement('div');
+  verified.className = 'report-line';
+  flagged.className = 'report-line';
+  rate.className = 'report-line';
+  verified.innerHTML = '<span>Verified claims</span><span>' + rep.verified + '</span>';
+  flagged.innerHTML = '<span>Flagged (uncited)</span><span>' + rep.flagged + '</span>';
+  rate.innerHTML = '<span>Hallucination rate</span><span>' + pct(rep.hallucination_rate) + '</span>';
+  el('report').appendChild(verified);
+  el('report').appendChild(flagged);
+  el('report').appendChild(rate);
 }
 
 function handleEvent(evt) {
@@ -251,10 +308,13 @@ async function loadIncidents() {
   const res = await fetch('/api/incidents');
   const list = await res.json();
   const sel = el('incidentSelect');
-  sel.innerHTML = list.map(function (i) {
-    return '<option value="' + i.id + '">' + i.id + ' — ' + i.signature
-      + ' (' + i.severity + (i.claimed_cve ? ', ' + i.claimed_cve : '') + ')</option>';
-  }).join('');
+  sel.innerHTML = '';
+  list.forEach(function (i) {
+    const opt = document.createElement('option');
+    opt.value = i.id;
+    opt.textContent = i.id + ' — ' + i.signature + ' (' + i.severity + (i.claimed_cve ? ', ' + i.claimed_cve : '') + ')';
+    sel.appendChild(opt);
+  });
 }
 
 el('startBtn').onclick = async function () {

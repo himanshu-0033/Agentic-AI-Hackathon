@@ -145,6 +145,8 @@ def fw_remove(world: World, rule_id: str) -> dict:
 
 def edr_quarantine(world: World, host: str) -> dict:
     """Host-level containment. The fallback when firewall enforcement fails."""
+    if not host:
+        return {"artifact_id": "quarantine_unknown", "host": None, "quarantined": False}
     world.quarantined.add(host)
     return {"artifact_id": f"quarantine_{host}", "host": host, "quarantined": True}
 

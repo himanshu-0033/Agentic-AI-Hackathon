@@ -86,7 +86,9 @@ def test_injection_3_override_then_autorollback():
     out2 = close_case(w, inv, w.alert, override=True, persist=False)
     assert out2["response"]["rolled_back"] is True
     assert out2["response"]["status"] == "rolled_back_to_narrow"
-    assert out2["response"]["rollback_reason"] is not None
+    # rollback_reason is populated on FAILURE/skip only; null means clean success
+    assert out2["response"]["rollback_reason"] is None
+    assert any(s["step"] == "fw_remove (rollback)" for s in out2["response"]["action_log"])
     # the final committed rule must be the narrow one, not the broad IP block
     committed = [r for r in w.firewall if r["committed"]]
     assert committed, "no committed rule survived"

@@ -82,6 +82,9 @@ class World:
         This is the verifier. It reads ONLY committed rules, so a staged rule
         (silent firewall failure) correctly reports PASS — traffic still flows.
         """
+        dst_host = self.assets.get(dst, {}).get("host")
+        if dst_host in self.quarantined:
+            return "DROP"
         for rule in self.firewall:
             if self._rule_matches(rule, src, dst, port):
                 return "DROP"

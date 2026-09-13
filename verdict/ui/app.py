@@ -90,6 +90,9 @@ def list_incidents() -> list[dict]:
 
 @app.post("/api/cases/{iid}/start")
 def start_case(iid: str, mode: str = "rule") -> dict:
+    mode = mode.lower()
+    if mode not in {"rule", "llm"}:
+        raise HTTPException(400, f"invalid mode {mode!r}; expected 'rule' or 'llm'")
     world = load_world(iid)
     case = {
         "iid": iid, "world": world, "mode": mode,

@@ -6,3 +6,5 @@ venv/
 .pytest_cache/
 # per-case agent state dumps (Phase 2)
 verdict/state/*.json
+# generated video (~7MB binary) — delivered to the user directly, not committed
+demo_output/

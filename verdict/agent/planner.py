@@ -2,7 +2,7 @@
 
 Two modes, one interface:
 
-  rule  — deterministic information-gain policy. Free, offline, reproducible.
+  rule  — deterministic evidence-priority policy. Free, offline, reproducible.
           This is what the eval scoreboard runs on.
   llm   — an LLM (Groq, OpenAI-compatible API) picks the tool and explains why,
           for the demo. Args are still resolved deterministically from real
@@ -84,14 +84,14 @@ def resolve_args(tool: str, alert: dict, ev: dict) -> Optional[dict]:
 # --- rule mode ---------------------------------------------------------------
 
 def _rule_next(alert: dict, ledger: Ledger, ev: dict, called: set) -> Action:
-    """Deterministic playbook framed as information gain over the hypotheses."""
+    """Deterministic policy that prioritizes the next most informative query."""
     def act(tool, why):
         args = resolve_args(tool, alert, ev)
         if args is None or (tool, _key(args)) in called:
             return None
         return {"tool": tool, "args": args, "rationale": why}
 
-    # 1. establish the attack surface first — highest expected information gain
+    # 1. establish the attack surface first — usually the highest-value evidence
     if "cmdb_asset" not in ev:
         return act("cmdb_asset",
                    "Unknown whether the target even runs the alerted service. "

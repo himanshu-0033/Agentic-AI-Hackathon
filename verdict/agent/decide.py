@@ -24,7 +24,7 @@ TIER = {"H1": "contain", "H2": "monitor", "H3": "monitor", "H4": "close"}
 
 def _malicious_dsts(world: World, src: str) -> set[str]:
     return {s["dst"] for s in world.sessions
-            if s.get("src") == src and not s.get("legit", True)}
+            if s.get("src") == src and "dst" in s}
 
 
 def decide(top: str, alert: dict, world: World) -> dict:

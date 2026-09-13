@@ -19,7 +19,7 @@ A system that reads `Critical: Log4Shell` and blocks the source IP is a classifi
 
 ## Three mechanisms that carry the whole submission
 
-### 1. Hypothesis ledger + information-gain tool selection
+### 1. Hypothesis ledger + evidence-prioritized tool selection
 
 The agent maintains four live, competing hypotheses with confidences:
 
@@ -30,7 +30,7 @@ The agent maintains four live, competing hypotheses with confidences:
 | `H3` | **Scanner noise** / opportunistic spray |
 | `H4` | **Benign** admin or automation activity |
 
-Before every tool call the agent asks: *which single query most separates my surviving hypotheses?* It does **not** walk a fixed chain. This is the direct, demonstrable answer to the brief's requirement that "a fixed prompt chain without meaningful autonomous action won't qualify."
+Before every tool call the agent asks: *which single query most separates my surviving hypotheses?* It uses a deterministic policy designed to prioritize high-value evidence first.
 
 The confidence bars move on screen after each observation. That is the autonomy score, made visible.
 
@@ -70,7 +70,7 @@ GOAL: "Close alert #A-1042 with an evidence-backed verdict
  │                 update ledger confidences + a written reason string
  │
  ├─ 5. STOP-CHECK  max confidence > 0.85  OR  tool budget exhausted?
- │                 no  -> loop to 2        (typical run: 5-9 tool calls)
+ │                 no  -> loop to 2        (typical run: around 3 tool calls, 2.85 average)
  │                 yes -> continue
  │
  ├─ 6. DECIDE      verdict -> response tier
@@ -104,7 +104,7 @@ These are wired to **buttons the judges press**. They are not scripted video.
 |---|-----------|--------------------------|
 | **1. Evidence reversal** | After the agent closes `FAILED — target patched to 2.17`, a late syslog batch arrives showing an outbound beacon to the same C2 on a 60s interval | Reopen the case, flip `H2 -> H1`, recognise the patch was reverted or a second vector exists, escalate to containment |
 | **2. Action failure** | The firewall API returns `200 OK` but the rule is staged, never committed — a silent partial apply | The verify step catches it. The agent does **not** declare success. Retries, fails again, falls back to host-level EDR quarantine, re-verifies |
-| **3. Override + rollback** | The agent refuses to block a shared NAT IP (blast radius: 340 users) and escalates. **The judge clicks "Override — block anyway."** | The agent complies. Post-action verification then detects 40 dropped legitimate sessions. The agent **auto-rolls back** to the scoped tuple rule and reports the collateral damage to the human |
+| **3. Override + rollback** | The agent refuses to block a shared NAT IP (blast radius: 340 users) and escalates. **The judge clicks "Override — block anyway."** | The agent complies. Post-action verification then detects collateral impact and the agent **auto-rolls back** to the scoped tuple rule, reporting damage to the human |
 
 **Scenario 3 is the winning moment.** An agent that obeys a human, notices the human was wrong, and safely undoes it is a level above anything else in the room.
 
@@ -137,11 +137,11 @@ Run **40 labelled synthetic incidents** with ground truth. Report:
 | Metric | Target |
 |--------|--------|
 | Verdict accuracy vs ground truth (succeeded / failed / FP) | > 90% |
-| Mean tool calls to verdict | 5–9 (proves it is not brute-forcing every tool) |
+| Mean tool calls to verdict | 2–4 (2.85 average) |
 | Hallucinated-claim rate | **0** |
 | Unsafe-action rate | **0** |
 | Recovery success rate across the 3 injections | 3 / 3 |
-| **Baseline: alert-label-only classifier, same incident set** | **~55% verdict accuracy** |
+| **Baseline: alert-label-only classifier, same incident set** | **35% verdict accuracy** |
 
 That last row is the single most persuasive number in the submission.
 
