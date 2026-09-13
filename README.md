@@ -4,6 +4,10 @@
 
 Built for **Tech Zephyr 4.0 — Agentic AI Hackathon, IIT Bhubaneswar**
 Track 5: Cybersecurity · **Problem Statement 9** — Autonomous SOC Investigation & Response Agent
+Team **Verdict**
+
+**Status: complete.** Code, tests, UI, pitch deck, and demo video are all done —
+see [SUBMISSION.md](SUBMISSION.md) for the delivered package and links.
 
 ---
 
@@ -81,10 +85,10 @@ GOAL: "Close alert #A-1042 with an evidence-backed verdict
  │                   high collateral -> propose + ESCALATE to human
  │                   low  collateral -> execute autonomously
  │
- ├─ 7. EXECUTE     fw.apply(rule)          <- state-changing
+ ├─ 7. EXECUTE     fw_apply(rule)          <- state-changing
  │
  ├─ 8. VERIFY      (a) re-read firewall state - is the rule committed AND live?
- │                 (b) env.probe() - does traffic actually drop now?
+ │                 (b) env_probe() - does traffic actually drop now?
  │                 (c) Evidence Auditor - is every report claim cited?
  │                 any failure -> back to 2, with the failure as new evidence
  │
@@ -116,17 +120,17 @@ All synthetic. No real hosts, no real credentials, no traffic leaves the simulat
 
 | Tool | Returns | State-changing |
 |------|---------|:--------------:|
-| `nids.alerts()` | Suricata-format alert stream | no |
-| `pcap.flow(id)` | payload snippet, bytes in/out, duration, direction | no |
-| `cmdb.asset(ip)` | host, OS, installed versions, criticality, owner, **peer dependencies** | no |
-| `cve.match(product, version)` | exploitable?, patch status, exploit maturity | no |
-| `logs.query(host, window, grep)` | web / auth / syslog lines | no |
-| `edr.processtree(host, t)` | spawned processes, persistence artifacts | no |
-| `fw.apply(rule)` / `fw.state()` | commit result — **fails on demand** | **yes** |
-| `edr.quarantine(host)` | fallback enforcement path | **yes** |
-| `env.probe(src, dst, port)` | does traffic actually pass right now? | no — this is the verifier |
+| `nids_alerts()` | Suricata-format alert stream | no |
+| `pcap_flow(flow_id)` | payload snippet, bytes in/out, duration, direction | no |
+| `cmdb_asset(ip)` | host, OS, installed versions, criticality, owner, **peer dependencies** | no |
+| `cve_match(product, version)` | exploitable?, patch status, exploit maturity | no |
+| `logs_query(host, window, grep)` | web / auth / syslog lines | no |
+| `edr_processtree(host, t)` | spawned processes, persistence artifacts | no |
+| `fw_apply(rule)` / `fw_state()` | commit result — **fails on demand** | **yes** |
+| `edr_quarantine(host)` | fallback enforcement path | **yes** |
+| `env_probe(src, dst, port)` | does traffic actually pass right now? | no — this is the verifier |
 
-`env.probe` is the entire verification story and costs about twenty lines. It is what separates *"the agent said it blocked"* from *"the block is real."* Do not skip it.
+`env_probe` is the entire verification story and costs about twenty lines. It is what separates *"the agent said it blocked"* from *"the block is real."* Do not skip it.
 
 ---
 
@@ -147,17 +151,33 @@ That last row is the single most persuasive number in the submission.
 
 ---
 
-## Demo video beats
+## Demo video
 
-Maps 1:1 onto the brief's required sequence.
+**Done — delivered as `Verdict_video_agentic.webm`.** It's a real recording of
+the actual app running (a headless-browser automation script drove the live
+UI through the sequence below; Chromium's native recorder captured it), not a
+mockup or a slideshow. Maps 1:1 onto the brief's required sequence:
 
-1. **Goal** — "Close A-1042 safely." Ledger shows four hypotheses, near-even.
-2. **Decision** — *"Highest information gain: is `10.2.4.19` even running a vulnerable version?"* Not a fixed chain.
-3. **Action** — `cmdb.asset` then `cve.match`. `H2` jumps to 0.7.
-4. **Intermediate result** — *"0.7 is below my 0.85 threshold; a patched banner can lie. Checking EDR."*
-5. **Adaptation** — judge fires injection #1. Case reopens live, verdict flips, containment plan forms.
-6. **Adaptation ×2** — firewall silently fails, verify catches it, EDR quarantine fallback succeeds.
-7. **Final outcome** — evidence-cited incident report, probe confirms traffic dropped, case closed with a full action log.
+1. **Goal** — incident `A-1000` (ProxyLogon SSRF, severity *low* — one of the
+   6 adversarial cases). "Close it with an evidence-backed verdict."
+2. **Decision** — the reasoning trace animates live: `cmdb_asset` → `cve_match`
+   → `edr_processtree`. Not a fixed chain — each step is chosen because it's
+   the next-most-informative question, not because it's next on a list.
+3. **Action** — verdict `SUCCEEDED`, 99% confidence, 3 tool calls. Close Case
+   runs decide → execute → verify: the narrowest rule, then `env_probe`
+   re-checks the traffic is actually gone.
+4. **Intermediate result** — the Evidence Auditor panel: every claim cites a
+   real artifact ID, 0% hallucination rate, measured live.
+5. **Adaptation ×3** — incident `A-1014` closes `FAILED`, then late evidence
+   reopens it to `SUCCEEDED` (unprompted). A fresh case's firewall silently
+   fails twice, caught by `env_probe`, falls back to EDR quarantine. A third
+   case escalates on blast radius (340 users behind a shared NAT); a human
+   overrides; the agent complies, then catches its own collateral damage and
+   **auto-rolls back** to the narrow rule.
+6. **Final outcome** — the 40-incident scoreboard: 100% accuracy vs. 35%
+   baseline, printed live from `python -m verdict.eval.run`, not staged.
+
+See [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the full shot-by-shot breakdown.
 
 ---
 
@@ -179,7 +199,7 @@ The brief states explicitly that agent count earns zero points. A six-agent mesh
 | Technical implementation | 15% | Deterministic simulator, persistent state, reproducible eval harness |
 | Problem relevance & innovation | 10% | Exploitability adjudication + blast-radius gating — not alert classification |
 | Prototype functionality & UX | 10% | Single screen: live ledger, evidence graph, judge injection buttons |
-| Evaluation, verification & robustness | 10% | `env.probe` action verification, Evidence Auditor claim verification, 40-case scoreboard with baseline |
+| Evaluation, verification & robustness | 10% | `env_probe` action verification, Evidence Auditor claim verification, 40-case scoreboard with baseline |
 
 ---
 
@@ -217,5 +237,5 @@ python tests/test_respond.py            # Phase 3 acceptance: all 3 injections
 
 See **[ROADMAP.md](ROADMAP.md)** for the build plan (all 4 phases built and tested),
 **[PITCH_DECK.html](PITCH_DECK.html)** for the presentation, **[DEMO_SCRIPT.md](DEMO_SCRIPT.md)**
-for the shot-by-shot video script, and **[SUBMISSION.md](SUBMISSION.md)** for the
-submission checklist and file naming.
+for the shot-by-shot breakdown behind the delivered video, and **[SUBMISSION.md](SUBMISSION.md)**
+for the full submission package, links, and file naming.

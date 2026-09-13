@@ -21,7 +21,9 @@ uploading to the submission portal.
 - **GitHub repository:** https://github.com/himanshu-0033/Agentic-AI-Hackathon
 - **Pitch deck (live, clickable):** https://claude.ai/code/artifact/44072c5a-2e09-4dfd-b2db-ccd8fd7da519
   *(private by default — open it and use the share menu if the portal needs a public link, or submit the `PITCH_DECK.html` file directly instead)*
-- **Demo video:** delivered to you as `Verdict_video_agentic.webm` (~6.9MB, ~1m45s)
+- **Demo video:** delivered to you as `Verdict_video_agentic.webm` (~6.9MB, ~1m45s),
+  also saved locally at `demo_output/Verdict_video_agentic.webm` in this repo
+  (git-ignored — see `.gitignore` — so it won't show up on GitHub)
 
 ---
 

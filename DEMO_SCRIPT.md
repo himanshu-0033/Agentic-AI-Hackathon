@@ -1,5 +1,12 @@
 # VERDICT — Demo Video Script
 
+**The video has already been produced from this exact sequence**, delivered as
+`Verdict_video_agentic.webm` (see [SUBMISSION.md](SUBMISSION.md)) — a headless-browser
+automation script drove the live UI through these beats and Chromium's native
+recorder captured it. This document is kept as the reference for what it shows
+and as a ready-to-follow script if the team wants to re-record with their own
+live narration instead of the shipped on-screen captions.
+
 A shot-by-shot script against the real, running UI (`python -m verdict.ui.app` →
 `http://127.0.0.1:8000`). Every incident ID, button label, and number below
 was verified live against the actual code — nothing here is aspirational.
@@ -177,7 +184,10 @@ Let the scoreboard table print — real, reproducible, not staged.
 
 ---
 
-## Recording checklist
+## Re-recording checklist (only if you want your own narration)
+
+The shipped video already covers all of this. Only follow these steps if the
+team wants a version with a live human voiceover instead of on-screen captions.
 
 - [ ] Server running (`python -m verdict.ui.app`), page loaded, zoomed to ~110%
 - [ ] Screen recorder capturing browser + terminal
